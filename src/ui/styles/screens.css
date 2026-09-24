@@ -82,6 +82,17 @@
   animation: pop-in 0.45s var(--ease-back);
 }
 
+/* The build title sits in the top row, so keep it clear of the corner HUD buttons. */
+.screen--build .screen__top {
+  padding: max(48px, calc(var(--u) * 12)) 0 0;
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .screen--build .screen__top {
+    padding-top: 0;
+  }
+}
+
 /* Reveal ------------------------------------------------------------ */
 
 .screen--reveal .screen__bottom {
