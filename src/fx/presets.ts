@@ -1,0 +1,248 @@
+import { ParticleShape, type ParticleBlend, type ParticleShapeId } from './ParticleSystem';
+
+type Range = readonly [number, number];
+type Vec3 = readonly [number, number, number];
+
+/** Declarative emitter description. Tuning VFX means editing numbers here, not code. */
+export interface EmitterPreset {
+  blend: ParticleBlend;
+  shape: ParticleShapeId;
+  /** Fixed palette. When omitted the caller's tint colours are used (e.g. the character's energy). */
+  colors?: readonly number[];
+  life: Range;
+  size: Range;
+  /** End size as a multiplier of the start size. */
+  sizeEnd: number;
+  speed: Range;
+  direction: Vec3;
+  /** 0 = exactly along `direction`, 1 = uniformly random. */
+  spread: number;
+  /** Random spawn offset (box half-extents). */
+  jitter: Vec3;
+  gravity: number;
+  drag: number;
+  spin?: Range;
+  alpha?: number;
+  wobble?: number;
+}
+
+const FIRE_COLORS = [0xffe14a, 0xffb02e, 0xff7a1a, 0xff4d24] as const;
+const CONFETTI_COLORS = [0xff5fa8, 0xffd23f, 0x45f0df, 0x7c5cff, 0x5bf07a, 0xff8a2a, 0xffffff] as const;
+
+export const FX_PRESETS = {
+  flame: {
+    blend: 'alpha',
+    shape: ParticleShape.Blob,
+    colors: FIRE_COLORS,
+    life: [0.4, 0.75],
+    size: [0.16, 0.28],
+    sizeEnd: 0.15,
+    speed: [0.5, 1.1],
+    direction: [0, 1, 0],
+    spread: 0.25,
+    jitter: [0.05, 0.04, 0.05],
+    gravity: 1.4,
+    drag: 1.6,
+  },
+  ember: {
+    blend: 'alpha',
+    shape: ParticleShape.Disc,
+    colors: FIRE_COLORS,
+    life: [1.1, 1.9],
+    size: [0.035, 0.06],
+    sizeEnd: 0.2,
+    speed: [0.2, 0.5],
+    direction: [0, 1, 0],
+    spread: 0.5,
+    jitter: [0.75, 0.9, 0.5],
+    gravity: 0.5,
+    drag: 0.6,
+    wobble: 0.25,
+  },
+  thruster: {
+    blend: 'alpha',
+    shape: ParticleShape.Blob,
+    life: [0.22, 0.4],
+    size: [0.1, 0.17],
+    sizeEnd: 0.1,
+    speed: [1.4, 2.2],
+    direction: [0, -1, 0],
+    spread: 0.1,
+    jitter: [0.02, 0.02, 0.02],
+    gravity: 0,
+    drag: 3,
+  },
+  snow: {
+    blend: 'alpha',
+    shape: ParticleShape.Snow,
+    colors: [0xffffff, 0xe3fbff],
+    life: [2.2, 3.2],
+    size: [0.1, 0.16],
+    sizeEnd: 0.7,
+    speed: [0.2, 0.4],
+    direction: [0, -1, 0],
+    spread: 0.25,
+    jitter: [1.3, 0.2, 0.8],
+    gravity: -0.1,
+    drag: 0.4,
+    spin: [-1.5, 1.5],
+    wobble: 0.3,
+    alpha: 0.95,
+  },
+  frostMist: {
+    blend: 'additive',
+    shape: ParticleShape.Glow,
+    life: [0.9, 1.5],
+    size: [0.35, 0.55],
+    sizeEnd: 1.5,
+    speed: [0.05, 0.2],
+    direction: [0, 1, 0],
+    spread: 1,
+    jitter: [0.7, 0.05, 0.5],
+    gravity: 0,
+    drag: 0.5,
+    alpha: 0.3,
+  },
+  iceSparkle: {
+    blend: 'alpha',
+    shape: ParticleShape.Sparkle,
+    colors: [0xffffff, 0xd8fbff],
+    life: [0.3, 0.6],
+    size: [0.14, 0.22],
+    sizeEnd: 0,
+    speed: [0, 0.15],
+    direction: [0, 1, 0],
+    spread: 1,
+    jitter: [0.06, 0.06, 0.06],
+    gravity: 0,
+    drag: 1,
+  },
+  spark: {
+    blend: 'additive',
+    shape: ParticleShape.Sparkle,
+    life: [0.16, 0.38],
+    size: [0.08, 0.14],
+    sizeEnd: 0.2,
+    speed: [1.4, 3.4],
+    direction: [0, 1, 0],
+    spread: 1,
+    jitter: [0.03, 0.03, 0.03],
+    gravity: -6,
+    drag: 2,
+  },
+  sparkleBurst: {
+    blend: 'alpha',
+    shape: ParticleShape.Sparkle,
+    life: [0.45, 0.85],
+    size: [0.16, 0.28],
+    sizeEnd: 0,
+    speed: [1.2, 2.8],
+    direction: [0, 0.4, 0],
+    spread: 1,
+    jitter: [0.1, 0.1, 0.1],
+    gravity: -1.5,
+    drag: 2.6,
+  },
+  puff: {
+    blend: 'alpha',
+    shape: ParticleShape.Blob,
+    colors: [0xffffff, 0xeef1ff, 0xf8f4ff],
+    life: [0.35, 0.6],
+    size: [0.22, 0.36],
+    sizeEnd: 1.9,
+    speed: [0.8, 1.6],
+    direction: [0, 0.25, 0],
+    spread: 1,
+    jitter: [0.15, 0.05, 0.15],
+    gravity: 0.6,
+    drag: 4.5,
+    alpha: 0.95,
+  },
+  fireBurst: {
+    blend: 'alpha',
+    shape: ParticleShape.Blob,
+    colors: FIRE_COLORS,
+    life: [0.45, 0.9],
+    size: [0.22, 0.4],
+    sizeEnd: 0.1,
+    speed: [2, 4.6],
+    direction: [0, 0.6, 0],
+    spread: 1,
+    jitter: [0.2, 0.2, 0.2],
+    gravity: 1.8,
+    drag: 2.6,
+  },
+  iceBurst: {
+    blend: 'alpha',
+    shape: ParticleShape.Snow,
+    colors: [0xffffff, 0xd6f8ff, 0x9feeff],
+    life: [0.7, 1.2],
+    size: [0.16, 0.28],
+    sizeEnd: 0.5,
+    speed: [2.2, 4.4],
+    direction: [0, 0.4, 0],
+    spread: 1,
+    jitter: [0.2, 0.2, 0.2],
+    gravity: -1.2,
+    drag: 2.4,
+    spin: [-4, 4],
+  },
+  lightningBurst: {
+    blend: 'additive',
+    shape: ParticleShape.Sparkle,
+    life: [0.25, 0.55],
+    size: [0.12, 0.22],
+    sizeEnd: 0.2,
+    speed: [3, 6.5],
+    direction: [0, 0.5, 0],
+    spread: 1,
+    jitter: [0.15, 0.15, 0.15],
+    gravity: -5,
+    drag: 3,
+  },
+  confetti: {
+    blend: 'alpha',
+    shape: ParticleShape.Confetti,
+    colors: CONFETTI_COLORS,
+    life: [1.8, 2.6],
+    size: [0.15, 0.22],
+    sizeEnd: 1,
+    speed: [4, 6.5],
+    direction: [0, 1, 0],
+    spread: 0.42,
+    jitter: [0.1, 0.1, 0.1],
+    gravity: -6,
+    drag: 1.7,
+    spin: [-11, 11],
+    wobble: 0.55,
+  },
+  paintDrop: {
+    blend: 'alpha',
+    shape: ParticleShape.Disc,
+    colors: [0xff5fa8, 0xffd23f, 0x4ef0c8, 0x8f6bff],
+    life: [0.5, 0.9],
+    size: [0.06, 0.1],
+    sizeEnd: 0.6,
+    speed: [0.5, 1],
+    direction: [0, 1, 0],
+    spread: 0.6,
+    jitter: [0.02, 0.02, 0.02],
+    gravity: -4,
+    drag: 0.6,
+  },
+  dataBit: {
+    blend: 'alpha',
+    shape: ParticleShape.Ring,
+    life: [0.6, 1],
+    size: [0.1, 0.16],
+    sizeEnd: 0.4,
+    speed: [0.3, 0.6],
+    direction: [0, 1, 0],
+    spread: 0.4,
+    jitter: [0.05, 0.05, 0.05],
+    gravity: 0.4,
+    drag: 1,
+  },
+} satisfies Record<string, EmitterPreset>;
+
+export type FxPresetId = keyof typeof FX_PRESETS;
