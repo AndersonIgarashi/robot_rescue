@@ -1,0 +1,120 @@
+/* ------------------------------------------------------------------
+   Screens
+------------------------------------------------------------------- */
+
+/* Intro ------------------------------------------------------------ */
+
+.logo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.92;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.logo__build {
+  --ow: calc(var(--u) * 0.8);
+  font-size: var(--fs-logo-small);
+  letter-spacing: 0.18em;
+  margin-right: -0.18em;
+}
+
+.logo__main {
+  --ow: calc(var(--u) * 1.05);
+  font-size: var(--fs-logo);
+  white-space: nowrap;
+}
+
+.logo__ai {
+  color: var(--c-yellow);
+}
+
+.sparkle--a {
+  left: 6%;
+  top: -4%;
+}
+
+.sparkle--b {
+  right: -7%;
+  top: 38%;
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
+}
+
+.sparkle--c {
+  left: -4%;
+  bottom: 2%;
+  width: calc(var(--u) * 4.5);
+  height: calc(var(--u) * 4.5);
+  color: var(--c-white);
+}
+
+.subtitle {
+  --ow: calc(var(--u) * 0.5);
+  margin: 0;
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 4.5);
+  border-radius: var(--radius-pill);
+  background: var(--c-glass);
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  letter-spacing: 0.04em;
+}
+
+/* Choice ------------------------------------------------------------ */
+
+.question {
+  --ow: calc(var(--u) * 0.8);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  line-height: 1.02;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.question.is-swapping {
+  animation: pop-in 0.45s var(--ease-back);
+}
+
+/* Reveal ------------------------------------------------------------ */
+
+.screen--reveal .screen__bottom {
+  gap: var(--space-3);
+}
+
+.screen--reveal .btn--cta {
+  margin-top: var(--space-1);
+}
+
+/* Short portrait screens (iPhone SE, landscape phones): trim secondary copy. */
+@media (max-height: 720px) {
+  .namecard__desc {
+    display: none;
+  }
+}
+
+@media (min-aspect-ratio: 5/4) {
+  .screen__top {
+    gap: var(--space-3);
+  }
+  .logo {
+    margin-top: 0;
+  }
+}
+
+@media (min-aspect-ratio: 5/4) and (max-height: 520px) {
+  .stats,
+  .subtitle {
+    display: none;
+  }
+  .namecard {
+    padding-top: calc(var(--u) * 5);
+    padding-bottom: calc(var(--u) * 3);
+  }
+}

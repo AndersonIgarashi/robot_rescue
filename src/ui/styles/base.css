@@ -1,0 +1,242 @@
+/* ------------------------------------------------------------------
+   Base, layers and screen layout
+------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg-bottom);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--c-white);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  --bg-top: #6a5cff;
+  --bg-bottom: #36c2ff;
+  --bg-glow: #bdf4ff;
+  --focus-x: 50%;
+  --focus-y: 45%;
+  transition:
+    --bg-top 0.7s ease,
+    --bg-bottom 0.7s ease,
+    --bg-glow 0.7s ease;
+}
+
+/* Layer 1 — CSS background (free for the GPU compared to a fullscreen quad). */
+.bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      calc(var(--u) * 70) calc(var(--u) * 60) at var(--focus-x) var(--focus-y),
+      color-mix(in srgb, var(--bg-glow) 75%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+}
+
+.bg__pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.18) calc(var(--u) * 0.45), transparent calc(var(--u) * 0.5));
+  background-size: calc(var(--u) * 7) calc(var(--u) * 7);
+  mask-image: radial-gradient(circle at var(--focus-x) var(--focus-y), transparent 18%, #000 75%);
+  -webkit-mask-image: radial-gradient(circle at var(--focus-x) var(--focus-y), transparent 18%, #000 75%);
+  opacity: 0.7;
+}
+
+.bg__rays {
+  position: absolute;
+  left: var(--focus-x);
+  top: var(--focus-y);
+  width: 180vmax;
+  height: 180vmax;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.16) 0deg 9deg, transparent 9deg 20deg);
+  mask-image: radial-gradient(closest-side, #000 8%, transparent 42%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 8%, transparent 42%);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  animation: spin 40s linear infinite;
+  will-change: transform;
+}
+
+#app[data-scene='intro'] .bg__rays,
+#app[data-scene='reveal'] .bg__rays {
+  opacity: 1;
+}
+
+/* Layer 2 — WebGL canvas (transparent). */
+.scene-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  outline: none;
+}
+
+/* Layer 3 — DOM UI. Passes pointer events through to the canvas except on controls. */
+.ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(var(--safe-top) + var(--space-4)) calc(var(--safe-right) + var(--space-3))
+    calc(var(--safe-bottom) + var(--space-5)) calc(var(--safe-left) + var(--space-3));
+  visibility: hidden;
+}
+
+.screen.is-active,
+.screen.is-leaving {
+  visibility: visible;
+}
+
+.screen.is-leaving {
+  animation: screen-out 0.24s var(--ease-in) forwards;
+}
+
+.screen.is-leaving * {
+  pointer-events: none !important;
+}
+
+.screen__top,
+.screen__bottom {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.stage-slot {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 22%;
+}
+
+.screen.is-active .pop {
+  animation: pop-in 0.55s var(--ease-back) both;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+
+/* Landscape / desktop: hero on the left, UI column on the right. */
+@media (min-aspect-ratio: 5/4) {
+  .screen {
+    display: grid;
+    grid-template-columns: 54% 46%;
+    grid-template-rows: 1fr auto auto 1fr;
+    grid-template-areas:
+      'stage .'
+      'stage top'
+      'stage bottom'
+      'stage .';
+    column-gap: var(--space-3);
+    row-gap: var(--space-5);
+    padding-left: calc(var(--safe-left) + var(--space-5));
+    padding-right: calc(var(--safe-right) + var(--space-6));
+  }
+  .stage-slot {
+    grid-area: stage;
+    min-height: 0;
+    height: 100%;
+  }
+  .screen__top {
+    grid-area: top;
+  }
+  .screen__bottom {
+    grid-area: bottom;
+  }
+}
+
+/* Chunky outlined game text (text-shadow outline works on every browser). */
+.outlined {
+  --ow: var(--outline);
+  --ink: var(--c-ink);
+  color: var(--c-white);
+  text-shadow:
+    var(--ow) 0 0 var(--ink),
+    calc(var(--ow) * -1) 0 0 var(--ink),
+    0 var(--ow) 0 var(--ink),
+    0 calc(var(--ow) * -1) 0 var(--ink),
+    calc(var(--ow) * 0.72) calc(var(--ow) * 0.72) 0 var(--ink),
+    calc(var(--ow) * -0.72) calc(var(--ow) * 0.72) 0 var(--ink),
+    calc(var(--ow) * 0.72) calc(var(--ow) * -0.72) 0 var(--ink),
+    calc(var(--ow) * -0.72) calc(var(--ow) * -0.72) 0 var(--ink),
+    0 calc(var(--ow) * 2.2) 0 var(--ink),
+    0 calc(var(--ow) * 3.2) calc(var(--ow) * 1.6) rgba(10, 5, 40, 0.3);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--u) * 4)) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes screen-out {
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg__rays {
+    animation: none;
+  }
+}

@@ -1,0 +1,102 @@
+/* ------------------------------------------------------------------
+   Design tokens
+   1u = 1% of a virtual 9:16 portrait frame, so every component keeps its
+   proportions from a 360px phone to a desktop monitor.
+------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Lilita One';
+  src: url('../../assets/fonts/LilitaOne-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Registered so the background gradient can transition between themes. */
+@property --bg-top {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6a5cff;
+}
+@property --bg-bottom {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #36c2ff;
+}
+@property --bg-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #bdf4ff;
+}
+
+:root {
+  --u: min(1vw, 0.5625vh);
+
+  /* Typography */
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-logo: calc(var(--u) * 16.5);
+  --fs-logo-small: calc(var(--u) * 10);
+  --fs-h2: calc(var(--u) * 7.4);
+  --fs-btn: calc(var(--u) * 8.4);
+  --fs-card: calc(var(--u) * 5.2);
+  --fs-body: calc(var(--u) * 4.4);
+  --fs-small: calc(var(--u) * 3.4);
+
+  /* Colour */
+  --c-ink: #1d1646;
+  --c-white: #ffffff;
+  --c-yellow: #ffd23f;
+  --c-yellow-deep: #ff9f1c;
+  --c-cta-top: #8dff5e;
+  --c-cta-bottom: #1ec95a;
+  --c-cta-edge: #0e8a3b;
+  --c-panel: rgba(255, 255, 255, 0.95);
+  --c-glass: rgba(24, 16, 72, 0.3);
+  --c-glass-edge: rgba(255, 255, 255, 0.55);
+  --energy: #45f0df;
+
+  /* Spacing */
+  --space-1: calc(var(--u) * 1);
+  --space-2: calc(var(--u) * 2);
+  --space-3: calc(var(--u) * 3);
+  --space-4: calc(var(--u) * 4.5);
+  --space-5: calc(var(--u) * 6);
+  --space-6: calc(var(--u) * 8);
+
+  /* Shape */
+  --radius-s: calc(var(--u) * 2.5);
+  --radius-m: calc(var(--u) * 4.5);
+  --radius-l: calc(var(--u) * 6);
+  --radius-pill: 999px;
+  --border: calc(var(--u) * 0.9);
+  --outline: calc(var(--u) * 0.75);
+  /* Chunky 3D bottom edge used by buttons and cards. */
+  --edge: calc(var(--u) * 1.6);
+
+  /* Icons */
+  --icon-card: calc(var(--u) * 15);
+  --icon-slot: calc(var(--u) * 6.5);
+  --icon-hud: max(20px, calc(var(--u) * 5.5));
+
+  /* Motion */
+  --t-fast: 120ms;
+  --t-med: 240ms;
+  --t-slow: 480ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 0.9, 0.3);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Safe areas (notches, home indicators) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* Landscape / desktop: two-column layout, so the unit follows the height. */
+@media (min-aspect-ratio: 5/4) {
+  :root {
+    --u: min(0.42vw, 0.88vh);
+  }
+}

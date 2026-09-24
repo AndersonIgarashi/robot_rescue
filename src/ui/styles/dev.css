@@ -1,0 +1,136 @@
+/* ------------------------------------------------------------------
+   Developer overlay (portfolio mode) and fallback screen
+------------------------------------------------------------------- */
+
+.dev-toggle {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-3));
+  left: calc(var(--safe-left) + var(--space-3));
+  z-index: 60;
+  height: max(28px, calc(var(--u) * 7));
+  padding: 0 max(10px, calc(var(--u) * 2.6));
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(10, 6, 36, 0.45);
+  color: #c9f7ff;
+  font: 700 max(10px, calc(var(--u) * 2.8)) / 1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.dev-toggle.is-pressed {
+  scale: 0.94;
+}
+
+.dev-panel {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-3) + max(34px, calc(var(--u) * 9)));
+  left: calc(var(--safe-left) + var(--space-3));
+  z-index: 60;
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(60vh, 520px);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(10, 6, 36, 0.86);
+  color: #e8ecff;
+  font: 500 11px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.dev-panel.is-open {
+  display: flex;
+}
+
+.dev-panel h3 {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #8fe9ff;
+}
+
+.dev-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.dev-stats div {
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dev-stats b {
+  display: block;
+  font-size: 13px;
+  color: #fff;
+}
+
+.dev-stats span {
+  font-size: 9px;
+  color: #9aa3d6;
+  letter-spacing: 0.06em;
+}
+
+.dev-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 60px;
+}
+
+.dev-log li {
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: break-word;
+}
+
+.dev-log li:first-child {
+  animation: pop-in 0.3s ease-out;
+}
+
+.dev-log b {
+  color: #ffd23f;
+}
+
+.dev-log time {
+  float: right;
+  color: #8f98c8;
+}
+
+.dev-log code {
+  display: block;
+  color: #9ff3e4;
+}
+
+.dev-meta {
+  color: #9aa3d6;
+  font-size: 10px;
+}
+
+.fallback {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  text-align: center;
+  background: linear-gradient(180deg, #6a5cff, #36c2ff);
+}
+
+.fallback p {
+  max-width: 28ch;
+  margin: 0;
+  font: 700 var(--fs-body) / 1.35 var(--font-body);
+}
