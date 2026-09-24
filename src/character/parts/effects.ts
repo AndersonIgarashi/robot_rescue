@@ -10,11 +10,11 @@ const tmpC = new Vector3();
 
 function crystalCluster({ geo, mat }: PartKit, side: -1 | 1, scale: number): Group {
   const cluster = new Group();
-  cluster.rotation.z = side * -0.35;
+  cluster.rotation.z = side * -0.45;
   cluster.scale.setScalar(scale);
-  addMesh(cluster, geo.octahedron(), mat.ice, { p: [0, 0.12, 0], s: [0.07, 0.2, 0.07] });
-  addMesh(cluster, geo.octahedron(), mat.ice, { p: [side * 0.07, 0.07, 0.02], r: [0, 0, side * -0.5], s: [0.05, 0.14, 0.05] });
-  addMesh(cluster, geo.octahedron(), mat.ice, { p: [-side * 0.05, 0.06, -0.03], r: [0.3, 0, side * 0.45], s: [0.045, 0.12, 0.045] });
+  addMesh(cluster, geo.octahedron(), mat.ice, { p: [0, 0.15, 0], s: [0.09, 0.26, 0.09] });
+  addMesh(cluster, geo.octahedron(), mat.ice, { p: [side * 0.09, 0.09, 0.03], r: [0, 0, side * -0.55], s: [0.065, 0.18, 0.065] });
+  addMesh(cluster, geo.octahedron(), mat.ice, { p: [-side * 0.07, 0.08, -0.04], r: [0.3, 0, side * 0.5], s: [0.06, 0.16, 0.06] });
   return cluster;
 }
 
@@ -104,17 +104,17 @@ export const EFFECT_FACTORIES: Record<EffectId, AttachmentFactory> = {
           sockets.handR.getWorldPosition(tmpB);
           sockets.chest.getWorldPosition(tmpC);
           tmpC.z += 0.35;
-          ctx.fx.arcs.spawn(tmpA, tmpC, color, randRange(0.08, 0.14), 0.07);
-          ctx.fx.arcs.spawn(tmpC, tmpB, color, randRange(0.08, 0.14), 0.07);
+          ctx.fx.arcs.spawn(tmpA, tmpC, color, randRange(0.08, 0.14), 0.13);
+          ctx.fx.arcs.spawn(tmpC, tmpB, color, randRange(0.08, 0.14), 0.13);
         } else if (roll < 0.55 && rig.antenna.visible) {
           sockets.antennaTip.getWorldPosition(tmpA);
           tmpB.set(tmpA.x + randSigned(0.5), tmpA.y + randRange(0.1, 0.5), tmpA.z + randSigned(0.3));
-          ctx.fx.arcs.spawn(tmpA, tmpB, color, randRange(0.07, 0.12), 0.06);
+          ctx.fx.arcs.spawn(tmpA, tmpB, color, randRange(0.07, 0.12), 0.11);
         } else {
           const hand = Math.random() < 0.5 ? sockets.handL : sockets.handR;
           hand.getWorldPosition(tmpA);
           tmpB.set(tmpA.x + randSigned(0.6), tmpA.y - randRange(0.1, 0.5), tmpA.z + randSigned(0.4));
-          ctx.fx.arcs.spawn(tmpA, tmpB, color, randRange(0.07, 0.12), 0.06);
+          ctx.fx.arcs.spawn(tmpA, tmpB, color, randRange(0.07, 0.12), 0.11);
         }
       },
     };

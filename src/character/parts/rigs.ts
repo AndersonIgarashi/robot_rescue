@@ -41,8 +41,8 @@ function buildRobot({ geo, mat }: PartKit): BodyRig {
   addMesh(chest, geo.cylinder(), mat.energy, { r: [HALF_PI, 0, 0], s: [0.11, 0.05, 0.11] });
   addMesh(chest, geo.torus(0.25), mat.joint, { p: [0, 0, -0.005], s: 0.13 });
   const back = addGroup(torsoWrap, [0, 0.42, -0.45], 'back');
-  const shoulderL = addGroup(torsoWrap, [-0.33, 0.76, -0.06]);
-  const shoulderR = addGroup(torsoWrap, [0.33, 0.76, -0.06]);
+  const shoulderL = addGroup(torsoWrap, [-0.48, 0.74, 0]);
+  const shoulderR = addGroup(torsoWrap, [0.48, 0.74, 0]);
 
   const arms = SIDES.map((side) => {
     const joint = addGroup(torso, [side * 0.53, 0.6, 0]);
@@ -158,8 +158,8 @@ function buildAndroid({ geo, mat }: PartKit): BodyRig {
   const chest = addGroup(torsoWrap, [0, 0.46, 0.26], 'chest');
   addMesh(chest, geo.cylinder(), mat.energy, { r: [HALF_PI, 0, 0], s: [0.07, 0.04, 0.07] });
   const back = addGroup(torsoWrap, [0, 0.42, -0.23], 'back');
-  const shoulderL = addGroup(torsoWrap, [-0.27, 0.64, -0.04]);
-  const shoulderR = addGroup(torsoWrap, [0.27, 0.64, -0.04]);
+  const shoulderL = addGroup(torsoWrap, [-0.36, 0.66, 0]);
+  const shoulderR = addGroup(torsoWrap, [0.36, 0.66, 0]);
 
   const arms = SIDES.map((side) => {
     const joint = addGroup(torso, [side * 0.4, 0.58, 0]);

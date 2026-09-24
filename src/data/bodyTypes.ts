@@ -10,7 +10,7 @@ export const BODY_TYPES = [
     noun: 'robot',
     rig: 'robot',
     designation: 'MK',
-    bounds: { bottom: -0.32, top: 2.34, width: 1.6 },
+    bounds: { bottom: -0.62, top: 2.42, width: 1.6 },
     stats: { brain: 4 },
   },
   {
@@ -21,7 +21,7 @@ export const BODY_TYPES = [
     noun: 'android',
     rig: 'android',
     designation: 'NX',
-    bounds: { bottom: -0.32, top: 2.5, width: 1.4 },
+    bounds: { bottom: -0.62, top: 2.62, width: 1.4 },
     stats: { style: 6 },
   },
   {
@@ -32,7 +32,7 @@ export const BODY_TYPES = [
     noun: 'drone',
     rig: 'drone',
     designation: 'SKY',
-    bounds: { bottom: -0.32, top: 2.25, width: 2.5 },
+    bounds: { bottom: -0.62, top: 2.3, width: 2.5 },
     stats: { speed: 6 },
   },
 ] as const satisfies readonly BodyTypeDef[];

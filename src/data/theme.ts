@@ -30,7 +30,7 @@ export const STAGE_COLORS = {
   pedestalTop: 0xf6f7ff,
   pedestalSide: 0x5b5fe8,
   pedestalTrim: 0x3d3fb8,
-  backdrop: [0xffffff, 0xd9e2ff, 0xc9f4ff, 0xffe1f4],
+  backdrop: [0xeef0ff, 0xcfd8ff, 0xbdefff, 0xffd6ef],
   hemiSky: 0xdcecff,
   hemiGround: 0x6b5cff,
   key: 0xfff4e8,

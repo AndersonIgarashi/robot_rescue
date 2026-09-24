@@ -854,7 +854,7 @@
 
 @keyframes flash {
   from {
-    opacity: 0.7;
+    opacity: 0.42;
   }
   to {
     opacity: 0;

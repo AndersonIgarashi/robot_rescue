@@ -116,7 +116,7 @@ export class FXManager {
     for (let i = 0; i < 3; i++) {
       tmpStrikeFrom.set(target.x + randRange(-1.6, 1.6), target.y + randRange(4.5, 6), target.z + randRange(-1, 0.4));
       tmpStrikeTo.set(target.x + randRange(-0.25, 0.25), target.y + randRange(-0.2, 0.4), target.z);
-      this.arcs.spawn(tmpStrikeFrom, tmpStrikeTo, color, randRange(0.22, 0.34), 0.16, 0.5);
+      this.arcs.spawn(tmpStrikeFrom, tmpStrikeTo, color, randRange(0.22, 0.34), 0.26, 0.5);
     }
   }
 

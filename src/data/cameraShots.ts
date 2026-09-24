@@ -10,10 +10,10 @@ export interface CameraShot {
 }
 
 export const CAMERA_SHOTS = {
-  intro: { focus: 0.5, fill: 0.9, pitch: 8, yaw: -14 },
-  choice: { focus: 0.5, fill: 0.94, pitch: 7, yaw: -9 },
-  build: { focus: 0.55, fill: 0.78, pitch: 5, yaw: 0 },
-  reveal: { focus: 0.5, fill: 0.9, pitch: 3, yaw: 12 },
+  intro: { focus: 0.5, fill: 0.92, pitch: 8, yaw: -14 },
+  choice: { focus: 0.5, fill: 0.96, pitch: 7, yaw: -9 },
+  build: { focus: 0.55, fill: 0.8, pitch: 5, yaw: 0 },
+  reveal: { focus: 0.5, fill: 0.94, pitch: 3, yaw: 12 },
 } as const satisfies Record<string, CameraShot>;
 
 export type CameraShotId = keyof typeof CAMERA_SHOTS;

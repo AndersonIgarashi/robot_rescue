@@ -31,7 +31,7 @@ export class CameraController {
   readonly camera = new PerspectiveCamera(FOV, 1, 0.1, 60);
 
   private shot: CameraShot = CAMERA_SHOTS.intro;
-  private subject: SubjectBounds = { bottom: -0.32, top: 2.34, width: 1.6 };
+  private subject: SubjectBounds = { bottom: -0.62, top: 2.42, width: 1.6 };
   private viewport = { width: 1, height: 1 };
   private slot: ScreenRect = { x: 0, y: 0, width: 1, height: 1 };
 

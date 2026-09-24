@@ -100,7 +100,7 @@ export class CharacterController {
         break;
       case 'power':
         this.setPose('crouch', 0.3);
-        this.pendingHop = { delay: 0.14, velocity: 5.4, pose: 'power', hold: 1 };
+        this.pendingHop = { delay: 0.14, velocity: 4.2, pose: 'power', hold: 1 };
         this.expressJoy(1.2);
         break;
       case 'body':
@@ -176,7 +176,7 @@ export class CharacterController {
     this.setPose('crouch');
     await seq.wait(0.14);
     stage('hero');
-    this.hop(5.8);
+    this.hop(4.6);
     this.setPose(this.assembler.config.tuning.heroPose);
     await seq.wait(0.6);
   }

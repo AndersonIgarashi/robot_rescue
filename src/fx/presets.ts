@@ -205,7 +205,7 @@ export const FX_PRESETS = {
     shape: ParticleShape.Confetti,
     colors: CONFETTI_COLORS,
     life: [1.8, 2.6],
-    size: [0.15, 0.22],
+    size: [0.12, 0.18],
     sizeEnd: 1,
     speed: [4, 6.5],
     direction: [0, 1, 0],
