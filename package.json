@@ -1,0 +1,22 @@
+{
+  "name": "build-your-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build Your AI — a mobile-first HTML5 playable ad built with TypeScript, Three.js and Vite.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1"
+  }
+}
