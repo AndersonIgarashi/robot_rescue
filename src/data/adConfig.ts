@@ -3,7 +3,10 @@
  * overridden from the URL (e.g. `?cta=CREATE%20YOUR%20AI&dev=0&sound=0`).
  */
 export interface AdConfig {
+  /** CTA on the race start line. */
   ctaLabel: string;
+  /** CTA after the teaser run freezes on its cliffhanger. */
+  ctaFollowUpLabel: string;
   storeUrl: string;
   /** Seconds between a choice and the next step (lets the reaction play). */
   autoAdvanceDelay: number;
@@ -19,7 +22,8 @@ export interface AdConfig {
 }
 
 const DEFAULTS: AdConfig = {
-  ctaLabel: 'PLAY NOW',
+  ctaLabel: 'RUN!',
+  ctaFollowUpLabel: 'PLAY NOW',
   storeUrl: 'https://example.com/store/build-your-ai',
   autoAdvanceDelay: 0.85,
   hintDelayIntro: 1.2,

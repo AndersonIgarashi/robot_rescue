@@ -61,9 +61,9 @@ export class GeometryLibrary {
     return this.get(`rbox:${r3(w)}:${r3(h)}:${r3(d)}:${r3(radius)}`, () => new RoundedBoxGeometry(w, h, d, 3, radius));
   }
 
-  /** Unit-height cylinder with bottom radius 1 and top radius `topRatio`. */
-  cylinder(topRatio = 1): BufferGeometry {
-    return this.get(`cyl:${r3(topRatio)}`, () => new CylinderGeometry(topRatio, 1, 1, 24));
+  /** Unit-height cylinder with bottom radius 1 and top radius `topRatio` (`sides` = 6 gives a hex prism). */
+  cylinder(topRatio = 1, sides = 24): BufferGeometry {
+    return this.get(`cyl:${r3(topRatio)}:${sides}`, () => new CylinderGeometry(topRatio, 1, 1, sides));
   }
 
   capsule(radius: number, length: number): BufferGeometry {

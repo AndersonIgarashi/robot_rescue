@@ -57,6 +57,10 @@ export class CharacterController {
   private joyTimer = 0;
   private waveTimer = 0;
   private waveDuration = 1;
+  private glanceTimer = 0;
+  private running = false;
+  private runClock = 0;
+  private facing = 0;
   private clock = 0;
   private readonly hipBaseY = new WeakMap<Group, number>();
 
@@ -93,6 +97,21 @@ export class CharacterController {
     this.expressJoy(duration * 0.8);
   }
 
+  /** Quick look over the shoulder (at the race track behind it). */
+  glance(duration = 0.9): void {
+    this.glanceTimer = duration;
+  }
+
+  /** Locomotion mode: a procedural run cycle replaces the idle limbs. */
+  setRunning(running: boolean): void {
+    this.running = running;
+  }
+
+  /** Yaw the body settles to when not being dragged (0 = facing the camera, PI = running into the screen). */
+  setFacing(yaw: number): void {
+    this.facing = yaw;
+  }
+
   expressJoy(duration: number): void {
     this.joyTimer = duration;
     this.setJoy(true);
@@ -125,6 +144,7 @@ export class CharacterController {
   }
 
   beginDrag(): void {
+    if (this.running) return;
     this.dragging = true;
     this.yawVelocity = 0;
   }
@@ -213,6 +233,12 @@ export class CharacterController {
     this.dragging = false;
     this.joyTimer = 0;
     this.waveTimer = 0;
+    this.glanceTimer = 0;
+    this.running = false;
+    this.runClock = 0;
+    this.facing = 0;
+    rig.legL?.rotation.set(0, 0, 0);
+    rig.legR?.rotation.set(0, 0, 0);
     this.setJoy(false);
     this.assembler.materials.setPowerLevel(1, 0);
     void this.assembler.setAttachmentsVisible(true, false);
@@ -238,7 +264,7 @@ export class CharacterController {
       this.yaw += this.yawVelocity * dt;
       this.yawVelocity *= Math.exp(-4 * dt);
       this.releaseTimer += dt;
-      if (this.releaseTimer > 0.9) this.yaw = damp(this.yaw, 0, 3, dt);
+      if (this.releaseTimer > 0.9) this.yaw = damp(this.yaw, this.facing, this.running ? 9 : 3, dt);
     }
 
     this.lookX = damp(this.lookX, pointer.active ? pointer.x : 0, 5, dt);
@@ -262,6 +288,10 @@ export class CharacterController {
     const legScale = (hipBase - drop) / hipBase;
     rig.legL?.scale.set(1, legScale, 1);
     rig.legR?.scale.set(1, legScale, 1);
+    if (!this.running) {
+      rig.legL?.rotation.set(0, 0, 0);
+      rig.legR?.rotation.set(0, 0, 0);
+    }
 
     const breathe = Math.sin(t * set.bobFrequency * 0.5);
     rig.torso.scale.set(1 - breathe * 0.008, 1 + breathe * 0.016, 1 - breathe * 0.008);
@@ -286,7 +316,14 @@ export class CharacterController {
       rig.head.rotation.z += 0.12 * Math.max(0, envelope) * metrics.headTiltScale;
     }
 
-    for (const spinner of rig.spinners) spinner.rotation.y += dt * 30;
+    if (this.glanceTimer > 0) {
+      const envelope = Math.sin(Math.min(1, 1 - this.glanceTimer / 0.9) * Math.PI);
+      rig.head.rotation.y += 1.1 * envelope * tilt;
+    }
+
+    if (this.running) this.applyRunCycle(dt);
+
+    for (const spinner of rig.spinners) spinner.rotation.y += dt * (this.running ? 45 : 30);
 
     this.updateFace(dt);
   }
@@ -310,6 +347,7 @@ export class CharacterController {
       if (this.joyTimer <= 0) this.setJoy(false);
     }
     if (this.waveTimer > 0) this.waveTimer = Math.max(0, this.waveTimer - dt);
+    if (this.glanceTimer > 0) this.glanceTimer = Math.max(0, this.glanceTimer - dt);
   }
 
   private updateHop(dt: number): void {
@@ -327,6 +365,21 @@ export class CharacterController {
     if (impact > 0.35 && this.assembler.rig.legL) {
       this.fx.burst('puff', this.getAnchor('ground', tmp), Math.round(10 * impact));
     }
+  }
+
+  /** Run cycle: opposed leg/arm swing, forward lean and a bouncy stride. */
+  private applyRunCycle(dt: number): void {
+    const rig = this.assembler.rig;
+    const { armPoseScale } = rig.metrics;
+    this.runClock += dt * 13;
+    const swing = Math.sin(this.runClock);
+    rig.legL?.rotation.set(swing * 0.85, 0, 0);
+    rig.legR?.rotation.set(-swing * 0.85, 0, 0);
+    rig.armL.rotation.set(-swing * 0.9 * armPoseScale, 0, -0.25 * armPoseScale);
+    rig.armR.rotation.set(swing * 0.9 * armPoseScale, 0, 0.25 * armPoseScale);
+    rig.torso.rotation.x = 0.24;
+    rig.head.rotation.x = -0.18 * rig.metrics.headTiltScale;
+    rig.root.position.y += Math.abs(Math.cos(this.runClock)) * (rig.legL ? 0.09 : 0.04);
   }
 
   private updateFace(dt: number): void {

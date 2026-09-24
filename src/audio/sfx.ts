@@ -12,7 +12,10 @@ export type SfxId =
   | 'powerLightning'
   | 'powerUp'
   | 'success'
-  | 'cta';
+  | 'cta'
+  | 'beep'
+  | 'go'
+  | 'collect';
 
 export interface Synth {
   tone(options: ToneOptions): void;
@@ -92,6 +95,20 @@ export const SFX_RECIPES: Record<SfxId, SfxRecipe> = {
   success: (s) => {
     ARPEGGIO.forEach((freq, i) => s.tone({ freq, duration: i === 3 ? 0.55 : 0.14, type: 'triangle', gain: 0.18, delay: i * 0.09 }));
     s.tone({ freq: 2093, duration: 0.4, type: 'sine', gain: 0.06, delay: 0.36 });
+  },
+  beep: (s) => {
+    s.tone({ freq: 660, duration: 0.16, type: 'square', gain: 0.07 });
+    s.tone({ freq: 660, duration: 0.16, type: 'sine', gain: 0.12 });
+  },
+  go: (s) => {
+    s.tone({ freq: 1320, duration: 0.45, type: 'square', gain: 0.06 });
+    s.tone({ freq: 1320, duration: 0.45, type: 'sine', gain: 0.14 });
+    s.noise({ duration: 0.5, filter: 'bandpass', freq: 500, to: 3000, q: 1, gain: 0.22, delay: 0.05 });
+  },
+  collect: (s, variant) => {
+    const base = 988 * Math.pow(1.122, variant % 6);
+    s.tone({ freq: base, duration: 0.08, type: 'triangle', gain: 0.16 });
+    s.tone({ freq: base * 1.5, duration: 0.14, type: 'sine', gain: 0.12, delay: 0.05 });
   },
   cta: (s) => {
     [784, 988, 1175].forEach((freq) => s.tone({ freq, duration: 0.35, type: 'sine', gain: 0.1 }));

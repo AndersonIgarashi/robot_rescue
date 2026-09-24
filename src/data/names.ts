@@ -1,5 +1,5 @@
 import type { BodyTypeId } from './bodyTypes';
-import type { PersonalityId } from './personalities';
+import type { GadgetId } from './gadgets';
 import type { PowerId } from './powers';
 
 /**
@@ -8,7 +8,7 @@ import type { PowerId } from './powers';
  * defaults and targeted overrides without touching code.
  */
 export interface NameRule {
-  readonly personality?: PersonalityId;
+  readonly gadget?: GadgetId;
   readonly power?: PowerId;
   readonly bodyType?: BodyTypeId;
   readonly name: string;
@@ -16,20 +16,20 @@ export interface NameRule {
 
 export const NAME_RULES: readonly NameRule[] = [
   // Targeted overrides (3 fields).
-  { bodyType: 'DRONE', power: 'FIRE', personality: 'FAST', name: 'COMET' },
+  { bodyType: 'DRONE', power: 'FIRE', gadget: 'TURBO', name: 'COMET' },
 
-  // Personality x power matrix (2 fields).
-  { power: 'FIRE', personality: 'SMART', name: 'EMBER' },
-  { power: 'FIRE', personality: 'FAST', name: 'BLAZE' },
-  { power: 'FIRE', personality: 'CREATIVE', name: 'SPARK' },
-  { power: 'ICE', personality: 'SMART', name: 'FROST' },
-  { power: 'ICE', personality: 'FAST', name: 'FLURRY' },
-  { power: 'ICE', personality: 'CREATIVE', name: 'AURORA' },
-  { power: 'LIGHTNING', personality: 'SMART', name: 'FLUX' },
-  { power: 'LIGHTNING', personality: 'FAST', name: 'VOLT' },
-  { power: 'LIGHTNING', personality: 'CREATIVE', name: 'NEON' },
+  // Gadget x power matrix (2 fields).
+  { power: 'FIRE', gadget: 'SHIELD', name: 'MAGMA' },
+  { power: 'FIRE', gadget: 'TURBO', name: 'BLAZE' },
+  { power: 'FIRE', gadget: 'BLASTER', name: 'SPARK' },
+  { power: 'ICE', gadget: 'SHIELD', name: 'FROST' },
+  { power: 'ICE', gadget: 'TURBO', name: 'FLURRY' },
+  { power: 'ICE', gadget: 'BLASTER', name: 'HAIL' },
+  { power: 'LIGHTNING', gadget: 'SHIELD', name: 'FLUX' },
+  { power: 'LIGHTNING', gadget: 'TURBO', name: 'VOLT' },
+  { power: 'LIGHTNING', gadget: 'BLASTER', name: 'ZAPPER' },
 
-  // Per-power fallbacks (1 field) — used when a new personality has no pairing yet.
+  // Per-power fallbacks (1 field) — used when a new gadget has no pairing yet.
   { power: 'FIRE', name: 'IGNIS' },
   { power: 'ICE', name: 'GLACIER' },
   { power: 'LIGHTNING', name: 'ZAP' },

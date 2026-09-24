@@ -7,21 +7,21 @@ export type EyeStyle = 'round' | 'focus' | 'sharp' | 'sparkle';
 export type MouthStyle = 'smile' | 'line' | 'grin';
 
 export type AccessoryId =
-  | 'glasses'
-  | 'headset'
-  | 'dataOrbit'
+  | 'armShield'
+  | 'shieldOrbit'
+  | 'chestEmblem'
   | 'headFin'
   | 'jetBoosters'
   | 'speedStripes'
-  | 'beret'
-  | 'paintBrush'
-  | 'shapeOrbit';
+  | 'armCannon'
+  | 'missilePods'
+  | 'scopeVisor';
 
 export type EffectId = 'flameHands' | 'emberAura' | 'iceCrystals' | 'snowAura' | 'lightningArcs' | 'sparkAura';
 
 export type AnimationSetId = 'steady' | 'zippy' | 'bouncy';
 
-export type PoseId = 'idle' | 'cheer' | 'hero' | 'crouch' | 'power';
+export type PoseId = 'idle' | 'cheer' | 'hero' | 'crouch' | 'power' | 'aim' | 'ready';
 
 /** How the character reacts when a choice is applied. */
 export type ReactionKind = 'select' | 'power' | 'body';

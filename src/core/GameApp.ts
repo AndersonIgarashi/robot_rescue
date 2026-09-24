@@ -5,12 +5,16 @@ import { AnalyticsManager, ConsoleSink, LocalStorageSink } from '../analytics/An
 import { AudioManager } from '../audio/AudioManager';
 import { CharacterAssembler } from '../character/CharacterAssembler';
 import { CharacterController } from '../character/CharacterController';
+import { POWERS } from '../data/powers';
 import { loadAdConfig, type AdConfig } from '../data/adConfig';
 import { FXManager } from '../fx/FXManager';
 import { ChoiceManager } from '../gameplay/ChoiceManager';
 import { GameFlow } from '../gameplay/GameFlow';
+import { RaceDirector } from '../gameplay/RaceDirector';
 import { InputManager } from '../input/InputManager';
+import { RaceTrack } from '../race/RaceTrack';
 import { Backdrop } from '../scene/Backdrop';
+import { BlobShadow, createRadialTexture } from '../scene/BlobShadow';
 import { CAMERA_FOV, CameraController } from '../scene/CameraController';
 import { SceneManager } from '../scene/SceneManager';
 import { Stage } from '../scene/Stage';
@@ -49,11 +53,15 @@ export class GameApp {
   private readonly sceneManager: SceneManager;
   private readonly camera = new CameraController();
   private readonly fx = new FXManager();
-  private readonly stage = new Stage();
+  private readonly gradient = createRadialTexture();
+  private readonly stage = new Stage(this.gradient);
+  private readonly shadow = new BlobShadow(this.gradient);
   private readonly backdrop = new Backdrop();
   private readonly choices = new ChoiceManager();
   private readonly assembler: CharacterAssembler;
   private readonly character: CharacterController;
+  private readonly raceTrack: RaceTrack;
+  private readonly race: RaceDirector;
   private readonly ui: UIManager;
   private readonly flow: GameFlow;
   private readonly quality: QualityManager;
@@ -62,6 +70,8 @@ export class GameApp {
   private rafId = 0;
   private lastTime = 0;
   private elapsed = 0;
+  /** World time: slows down with the race bullet-time; UI and camera keep real time. */
+  private worldTime = 0;
   private running = false;
   private contextLost = false;
   private resizeQueued = false;
@@ -76,7 +86,20 @@ export class GameApp {
     this.sceneManager = new SceneManager(root, { maxPixelRatio: this.config.maxPixelRatio });
     this.assembler = new CharacterAssembler(this.tweener, this.fx, this.choices.config);
     this.character = new CharacterController(this.assembler, this.tweener, this.fx);
-    this.sceneManager.add(this.backdrop.root, this.stage.root, this.assembler.root, this.fx.root);
+    this.assembler.root.add(this.shadow.mesh);
+    this.raceTrack = new RaceTrack(this.assembler.geometry, this.tweener);
+    this.race = new RaceDirector({
+      track: this.raceTrack,
+      character: this.character,
+      assembler: this.assembler,
+      camera: this.camera,
+      stage: this.stage,
+      backdrop: this.backdrop,
+      fx: this.fx,
+      tweener: this.tweener,
+      audio: this.audio,
+    });
+    this.sceneManager.add(this.backdrop.root, this.stage.root, this.raceTrack.root, this.assembler.root, this.fx.root);
 
     this.ui = new UIManager(root, this.input, this.audio, this.tweener);
     this.ui.onLayoutChange = () => this.updateViewport();
@@ -92,6 +115,7 @@ export class GameApp {
       assembler: this.assembler,
       character: this.character,
       choices: this.choices,
+      race: this.race,
       ai: createAIGenerator(this.config),
       adBridge: this.adBridge,
       config: this.config,
@@ -161,19 +185,25 @@ export class GameApp {
     this.input.update(now);
     this.tweener.update(dt);
     this.flow.update(dt);
+    this.race.update(dt);
+    const worldDt = dt * this.race.timeScale;
+    this.worldTime += worldDt;
 
     const pointer = this.input.pointer;
-    this.character.update(dt, pointer);
-    this.assembler.update(dt, this.elapsed);
+    this.character.update(worldDt, pointer);
+    this.assembler.update(worldDt, this.worldTime);
 
     this.parallaxX = damp(this.parallaxX, pointer.active ? pointer.x : 0, 2.5, dt);
     this.parallaxY = damp(this.parallaxY, pointer.active ? pointer.y : 0, 2.5, dt);
     this.camera.setPointer(this.parallaxX, this.parallaxY);
     this.camera.update(dt);
 
-    this.fx.update(dt, this.camera.camera.position);
+    this.fx.update(worldDt, this.camera.camera.position);
+    const energy = this.assembler.materials.energyColor;
+    this.raceTrack.update(worldDt, this.fx, energy);
     const rig = this.assembler.rig;
-    this.stage.update(this.elapsed, this.assembler.materials.energyColor, rig.metrics.hover + rig.root.position.y);
+    this.stage.update(this.elapsed, energy);
+    this.shadow.update(rig.metrics.hover + rig.root.position.y);
     this.backdrop.update(dt, this.elapsed);
     this.sceneManager.setRimColor(this.assembler.materials.energyColor);
     this.updateFocus();
@@ -192,6 +222,7 @@ export class GameApp {
       this.assembler.prewarm();
       const warmup = this.assembler.createShaderWarmup();
       withHiddenRevealed(this.fx.root, () => this.sceneManager.compile(warmup, this.camera.camera));
+      this.raceTrack.prewarm(POWERS, () => this.sceneManager.renderer.compile(this.sceneManager.scene, this.camera.camera));
     } catch (error) {
       console.warn('[app] prewarm skipped', error);
     }

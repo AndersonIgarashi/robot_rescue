@@ -14,7 +14,7 @@ const num = (value: unknown, fallback: number, min: number, max: number): number
 /**
  * Talks to a server-side LLM endpoint (the API key never ships in the ad).
  * Expected response (all fields optional):
- *   { name, tagline, description, tuning: { glow, idleTempo, fxDensity, heroPose }, stats: { brain, speed, style } }
+ *   { name, tagline, description, tuning: { glow, idleTempo, fxDensity, heroPose }, stats: { speed, armor, power } }
  *
  * Model output is untrusted: every field is validated, clamped or dropped,
  * and the part structure is always derived from the request — never from
@@ -64,9 +64,9 @@ export class RemoteAICharacterGenerator implements IAICharacterGenerator {
         heroPose: isPoseId(tuning.heroPose) ? tuning.heroPose : DEFAULT_TUNING.heroPose,
       },
       stats: {
-        brain: num(stats.brain, base.brain, 0, 100),
         speed: num(stats.speed, base.speed, 0, 100),
-        style: num(stats.style, base.style, 0, 100),
+        armor: num(stats.armor, base.armor, 0, 100),
+        power: num(stats.power, base.power, 0, 100),
       },
       designationNumber: 10 + (seed % 90),
     });

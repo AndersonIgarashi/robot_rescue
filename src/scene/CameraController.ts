@@ -41,6 +41,9 @@ export class CameraController {
   private focusY = 1;
   private offsetX = 0;
   private offsetY = 0;
+  private lookAhead = 0;
+  private readonly anchor = { x: 0, z: 0 };
+  private readonly anchorTarget = { x: 0, z: 0 };
 
   private trauma = 0;
   private time = 0;
@@ -72,6 +75,16 @@ export class CameraController {
     this.zoomPunch = Math.min(0.2, this.zoomPunch + amount);
   }
 
+  /** Ground point the camera frames (follows the runner down the track). */
+  setAnchor(x: number, z: number, immediate = false): void {
+    this.anchorTarget.x = x;
+    this.anchorTarget.z = z;
+    if (immediate) {
+      this.anchor.x = x;
+      this.anchor.z = z;
+    }
+  }
+
   setPointer(x: number, y: number): void {
     this.pointerX = x;
     this.pointerY = y;
@@ -86,6 +99,9 @@ export class CameraController {
     this.offsetY = target.offsetY;
     this.pitch = this.shot.pitch;
     this.yaw = this.shot.yaw;
+    this.lookAhead = this.shot.lookAhead ?? 0;
+    this.anchor.x = this.anchorTarget.x;
+    this.anchor.z = this.anchorTarget.z;
     this.apply();
   }
 
@@ -99,6 +115,9 @@ export class CameraController {
     this.offsetY = damp(this.offsetY, target.offsetY, lambda * 1.4, dt);
     this.pitch = damp(this.pitch, this.shot.pitch, 3, dt);
     this.yaw = damp(this.yaw, this.shot.yaw, 3, dt);
+    this.lookAhead = damp(this.lookAhead, this.shot.lookAhead ?? 0, 3, dt);
+    this.anchor.x = damp(this.anchor.x, this.anchorTarget.x, 10, dt);
+    this.anchor.z = damp(this.anchor.z, this.anchorTarget.z, 14, dt);
     this.trauma = Math.max(0, this.trauma - dt * 1.6);
     this.zoomPunch = damp(this.zoomPunch, 0, 5, dt);
     this.apply();
@@ -115,13 +134,13 @@ export class CameraController {
     const { width: W, height: H } = this.viewport;
     const slot = this.slot;
     const height = this.subject.top - this.subject.bottom;
-    const width = Math.max(this.subject.width, STAGE_WIDTH);
+    const width = Math.max(this.subject.width, this.shot.minWidth ?? STAGE_WIDTH);
     const tanHalf = Math.tan((FOV * DEG2RAD) / 2);
     const fill = this.shot.fill;
     const byHeight = (height * H) / (2 * tanHalf * fill * slot.height);
     const byWidth = (width * H) / (2 * tanHalf * fill * slot.width);
     return {
-      distance: Math.max(byHeight, byWidth) * (1 - this.zoomPunch),
+      distance: Math.max(byHeight, byWidth, this.shot.minDistance ?? 0) * (1 - this.zoomPunch),
       focusY: this.subject.bottom + height * this.shot.focus,
       offsetX: slot.x + slot.width / 2 - W / 2,
       offsetY: slot.y + slot.height / 2 - H / 2,
@@ -133,8 +152,14 @@ export class CameraController {
     const yaw = (this.yaw + this.pointerX * 4) * DEG2RAD;
     const d = this.distance;
     const camera = this.camera;
-    camera.position.set(Math.sin(yaw) * Math.cos(pitch) * d, this.focusY + Math.sin(pitch) * d, Math.cos(yaw) * Math.cos(pitch) * d);
-    camera.lookAt(0, this.focusY, 0);
+    const { x: ax, z: az } = this.anchor;
+    camera.position.set(
+      ax + Math.sin(yaw) * Math.cos(pitch) * d,
+      this.focusY + Math.sin(pitch) * d,
+      az + Math.cos(yaw) * Math.cos(pitch) * d,
+    );
+    // Looking past the subject pushes it down the frame and reveals the track ahead.
+    camera.lookAt(ax, this.focusY, az - this.lookAhead);
 
     const shake = this.trauma * this.trauma;
     if (shake > 0.0001) {

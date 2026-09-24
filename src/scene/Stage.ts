@@ -1,6 +1,5 @@
 import {
   AdditiveBlending,
-  CanvasTexture,
   CircleGeometry,
   Color,
   Group,
@@ -9,32 +8,15 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   RingGeometry,
-  SRGBColorSpace,
   TorusGeometry,
   Vector2,
+  type CanvasTexture,
 } from 'three';
+import type { Tweener } from '../core/Tweener';
 import { STAGE_COLORS } from '../data/theme';
+import { Easing } from '../utils/easing';
 
 const PEDESTAL_RADIUS = 1.07;
-
-/** 64px radial gradient drawn once at startup — the only "texture" in the playable. */
-function radialTexture(): CanvasTexture {
-  const size = 64;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.45, 'rgba(255,255,255,0.55)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-  }
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
 
 function flatDisc(radius: number, material: MeshBasicMaterial, y: number): Mesh {
   const mesh = new Mesh(new CircleGeometry(radius, 40), material);
@@ -43,20 +25,13 @@ function flatDisc(radius: number, material: MeshBasicMaterial, y: number): Mesh 
   return mesh;
 }
 
-/**
- * The chunky display pedestal. Shadows are faked with blob textures instead
- * of shadow maps — the classic mobile trick: zero extra render passes.
- */
+/** The chunky display pedestal (shown while building; it drops away when the race starts). */
 export class Stage {
   readonly root = new Group();
   private readonly ringMaterial = new MeshBasicMaterial({ toneMapped: false });
   private readonly glowMaterial: MeshBasicMaterial;
-  private readonly shadowMaterial: MeshBasicMaterial;
-  private readonly shadow: Mesh;
 
-  constructor() {
-    const gradient = radialTexture();
-
+  constructor(gradient: CanvasTexture) {
     const profile = [
       [0.9, -0.3],
       [1.05, -0.3],
@@ -71,14 +46,10 @@ export class Stage {
       new MeshStandardMaterial({ color: STAGE_COLORS.pedestalSide, roughness: 0.42, metalness: 0.05 }),
     );
 
-    const topMaterial = new MeshStandardMaterial({ color: STAGE_COLORS.pedestalTop, roughness: 0.55 });
-    const top = new Mesh(new CircleGeometry(PEDESTAL_RADIUS, 48), topMaterial);
+    const top = new Mesh(new CircleGeometry(PEDESTAL_RADIUS, 48), new MeshStandardMaterial({ color: STAGE_COLORS.pedestalTop, roughness: 0.55 }));
     top.rotation.x = -Math.PI / 2;
 
-    const trim = new Mesh(
-      new TorusGeometry(1.14, 0.05, 8, 48),
-      new MeshStandardMaterial({ color: STAGE_COLORS.pedestalTrim, roughness: 0.5 }),
-    );
+    const trim = new Mesh(new TorusGeometry(1.14, 0.05, 8, 48), new MeshStandardMaterial({ color: STAGE_COLORS.pedestalTrim, roughness: 0.5 }));
     trim.rotation.x = Math.PI / 2;
     trim.position.y = -0.24;
 
@@ -103,9 +74,6 @@ export class Stage {
     });
     const glow = flatDisc(1.05, this.glowMaterial, 0.008);
 
-    this.shadowMaterial = new MeshBasicMaterial({ color: 0x1d1646, map: gradient, transparent: true, opacity: 0.4, depthWrite: false });
-    this.shadow = flatDisc(0.72, this.shadowMaterial, 0.01);
-
     const floorShadow = flatDisc(
       2.1,
       new MeshBasicMaterial({ color: 0x140c40, map: gradient, transparent: true, opacity: 0.32, depthWrite: false }),
@@ -113,25 +81,37 @@ export class Stage {
     );
     floorShadow.scale.set(1, 0.7, 1);
 
-    this.root.add(floorShadow, side, top, trim, inset, ring, glow, this.shadow);
+    this.root.add(floorShadow, side, top, trim, inset, ring, glow);
     this.root.traverse((object) => {
-      object.matrixAutoUpdate = object === this.shadow;
+      if (object === this.root) return;
       object.updateMatrix();
+      object.matrixAutoUpdate = false;
     });
   }
 
-  /**
-   * @param energy current character energy colour
-   * @param lift body height above the pedestal (hover + hop)
-   */
-  update(time: number, energy: Color, lift: number): void {
+  /** Drops the pedestal away (race) or pops it back (replay). */
+  setVisible(visible: boolean, tweener: Tweener, animate = true): void {
+    const scale = this.root.scale;
+    tweener.killTweensOf(scale);
+    this.root.visible = true;
+    const target = visible ? 1 : 0.001;
+    if (!animate) {
+      scale.setScalar(target);
+      this.root.visible = visible;
+      return;
+    }
+    tweener.to(scale, { x: target, y: target, z: target }, {
+      duration: visible ? 0.45 : 0.3,
+      ease: visible ? Easing.outBack : Easing.inBack,
+      onComplete: () => (this.root.visible = visible),
+    });
+  }
+
+  update(time: number, energy: Color): void {
+    if (!this.root.visible) return;
     const pulse = 0.85 + Math.sin(time * 3) * 0.15;
     this.ringMaterial.color.copy(energy).multiplyScalar(pulse);
     this.glowMaterial.color.copy(energy);
     this.glowMaterial.opacity = 0.32 + Math.sin(time * 2.2) * 0.06;
-
-    const spread = 1 / (1 + lift * 0.7);
-    this.shadow.scale.setScalar(spread);
-    this.shadowMaterial.opacity = 0.42 * spread;
   }
 }

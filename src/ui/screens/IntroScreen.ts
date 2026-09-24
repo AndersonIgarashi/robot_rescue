@@ -16,7 +16,7 @@ export class IntroScreen extends Screen {
       sparkle(600, 'b'),
       sparkle(1100, 'c'),
     ]);
-    const subtitle = el('p', 'subtitle outlined pop', { style: '--d:140' }, ['Create your perfect AI']);
+    const subtitle = el('p', 'subtitle outlined pop', { style: '--d:140' }, ['Build it. Race it!']);
     this.top.append(logo, subtitle);
 
     const { button } = createCtaButton('START', 'pop pulse');

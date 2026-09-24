@@ -1,11 +1,11 @@
 import type { CharacterConfig, VisualTuning } from '../character/CharacterConfig';
 import type { BodyTypeId } from '../data/bodyTypes';
-import type { PersonalityId } from '../data/personalities';
+import type { GadgetId } from '../data/gadgets';
 import type { PowerId } from '../data/powers';
 import type { StatBlock } from '../data/types';
 
 export interface AICharacterRequest {
-  personality: PersonalityId;
+  gadget: GadgetId;
   power: PowerId;
   bodyType: BodyTypeId;
   locale?: string;

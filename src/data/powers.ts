@@ -1,6 +1,9 @@
 import type { PowerDef } from './types';
 
-/** Power = energy colour + attached VFX + activation burst + sound. */
+/**
+ * Power = energy colour + attached VFX + activation burst + sound, plus the
+ * race rules: the element it must dodge and the element it collects.
+ */
 export const POWERS = [
   {
     id: 'FIRE',
@@ -15,7 +18,9 @@ export const POWERS = [
     effects: ['flameHands', 'emberAura'],
     burst: { preset: 'fireBurst', count: 70 },
     sfx: 'powerFire',
-    stats: { speed: 4, style: 4 },
+    stats: { power: 5 },
+    hazard: { kind: 'waterJet', label: 'WATER', icon: 'water' },
+    pickup: { kind: 'flameOrb', label: 'FLAMES' },
   },
   {
     id: 'ICE',
@@ -30,7 +35,9 @@ export const POWERS = [
     effects: ['iceCrystals', 'snowAura'],
     burst: { preset: 'iceBurst', count: 60 },
     sfx: 'powerIce',
-    stats: { brain: 6 },
+    stats: { armor: 6 },
+    hazard: { kind: 'flameJet', label: 'FIRE', icon: 'flame' },
+    pickup: { kind: 'snowflake', label: 'SNOWFLAKES' },
   },
   {
     id: 'LIGHTNING',
@@ -45,7 +52,9 @@ export const POWERS = [
     effects: ['lightningArcs', 'sparkAura'],
     burst: { preset: 'lightningBurst', count: 60, strike: true },
     sfx: 'powerLightning',
-    stats: { speed: 7 },
+    stats: { speed: 6 },
+    hazard: { kind: 'magnet', label: 'MAGNETS', icon: 'magnet' },
+    pickup: { kind: 'battery', label: 'BATTERIES' },
   },
 ] as const satisfies readonly PowerDef[];
 

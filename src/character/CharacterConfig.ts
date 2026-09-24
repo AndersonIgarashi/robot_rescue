@@ -1,5 +1,5 @@
 import type { BodyTypeId } from '../data/bodyTypes';
-import type { PersonalityId } from '../data/personalities';
+import type { GadgetId } from '../data/gadgets';
 import type { PowerId } from '../data/powers';
 import type { AccessoryId, AnimationSetId, BodyRigId, EffectId, EyeStyle, MouthStyle, PoseId } from './types';
 
@@ -34,7 +34,7 @@ export interface VisualTuning {
  * UI -> ChoiceManager -> CharacterConfig -> CharacterAssembler -> Three.js scene.
  */
 export interface CharacterConfig {
-  personality: PersonalityId | null;
+  gadget: GadgetId | null;
   power: PowerId | null;
   bodyType: BodyTypeId;
   rig: BodyRigId;

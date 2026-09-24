@@ -7,7 +7,7 @@ export const BUILD_STAGES: Record<BuildStage, { progress: number; status: string
   body: { progress: 44, status: 'LOCKING BODY' },
   arms: { progress: 58, status: 'CONNECTING ARMS' },
   head: { progress: 72, status: 'MOUNTING HEAD' },
-  accessories: { progress: 86, status: 'INSTALLING PERSONALITY' },
+  accessories: { progress: 86, status: 'INSTALLING GADGET' },
   power: { progress: 96, status: 'CHARGING {power}' },
   hero: { progress: 100, status: 'BOOTING AI' },
 };

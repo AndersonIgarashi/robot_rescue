@@ -11,7 +11,7 @@ import { Sequence } from '../core/Sequence';
 import type { Tweener } from '../core/Tweener';
 import type { AdConfig } from '../data/adConfig';
 import { BUILD_STAGES } from '../data/buildStages';
-import { getBodyType, getPower } from '../data/catalog';
+import { getBodyType, getGadget, getPower } from '../data/catalog';
 import type { SelectionKey } from '../data/steps';
 import { DEFAULT_THEME } from '../data/theme';
 import type { FXManager } from '../fx/FXManager';
@@ -20,6 +20,7 @@ import type { CameraController } from '../scene/CameraController';
 import type { ProgressSlotView } from '../ui/types';
 import type { UIManager } from '../ui/UIManager';
 import type { ChoiceChange, ChoiceManager } from './ChoiceManager';
+import type { RaceDirector } from './RaceDirector';
 
 export interface GameContext {
   ui: UIManager;
@@ -32,18 +33,21 @@ export interface GameContext {
   assembler: CharacterAssembler;
   character: CharacterController;
   choices: ChoiceManager;
+  race: RaceDirector;
   ai: IAICharacterGenerator;
   adBridge: AdBridge;
   config: AdConfig;
 }
 
-type FlowState = 'intro' | 'choice' | 'building' | 'reveal';
+type FlowState = 'intro' | 'choice' | 'building' | 'reveal' | 'race' | 'launched';
 
 const ASSEMBLY_CLANK: Partial<Record<BuildStage, number>> = { legs: 0, body: 1, arms: 2, head: 3 };
-const REVEAL_CHEER_INTERVAL = 3.4;
 const INTRO_WAVE_INTERVAL = 3.2;
 const INTRO_FIRST_WAVE = 0.6;
-const REVEAL_HINT_DELAY = 3.2;
+/** How long the "YOUR AI IS READY!" beat holds before the race set rolls in. */
+const REVEAL_HOLD = 2.6;
+const RACE_HINT_DELAY = 2.2;
+const CLIFFHANGER_HINT_DELAY = 1.4;
 
 const center = new Vector3();
 const ground = new Vector3();
@@ -51,9 +55,9 @@ const tmp = new Vector3();
 
 /**
  * The playable's state machine: INTRO -> CHOICES (data-driven steps) ->
- * BUILD -> REVEAL/CTA -> REPLAY. It translates UI intent into ChoiceManager
- * updates and orchestrates the feedback (character, FX, camera, audio,
- * analytics) — but owns none of those systems.
+ * BUILD -> REVEAL -> RACE (end card, CTA) -> teaser run -> cliffhanger.
+ * It translates UI intent into ChoiceManager updates and orchestrates the
+ * feedback (character, FX, camera, audio, analytics) — but owns none of those systems.
  */
 export class GameFlow {
   private state: FlowState = 'intro';
@@ -64,7 +68,6 @@ export class GameFlow {
   private readonly localAI = new MockAICharacterGenerator({ latencyMs: [0, 0] });
   private hintDelay = 0;
   private hintCountdown = -1;
-  private revealTimer = 0;
   private waveTimer = 0;
   private startedAt = 0;
   private plays = 0;
@@ -116,14 +119,6 @@ export class GameFlow {
         this.ctx.character.wave();
       }
     }
-    if (this.state === 'reveal') {
-      this.revealTimer -= dt;
-      if (this.revealTimer <= 0) {
-        this.revealTimer = REVEAL_CHEER_INTERVAL;
-        this.ctx.character.react('select');
-        this.celebrate(0.35);
-      }
-    }
   }
 
   // --- Input handlers -------------------------------------------------------
@@ -163,23 +158,45 @@ export class GameFlow {
     });
   }
 
+  /**
+   * RUN! opens the store. In the ad the player lands in the store while the
+   * racer launches off the line behind it; the teaser run ends on a freeze
+   * with a second CTA.
+   */
   private handleCta(): void {
-    if (this.state !== 'reveal') return;
-    const { analytics, audio, camera, adBridge, ui, config } = this.ctx;
+    if (this.state !== 'race' && this.state !== 'launched') return;
+    const { analytics, audio, camera, adBridge, ui, config, race } = this.ctx;
+    const fromStartLine = this.state === 'race';
     analytics.track('CTA_CLICKED', {
       name: this.result?.name ?? null,
-      label: config.ctaLabel,
+      label: fromStartLine ? config.ctaLabel : config.ctaFollowUpLabel,
+      placement: fromStartLine ? 'start_line' : 'cliffhanger',
       environment: adBridge.environment,
     });
     audio.play('cta');
     camera.punch(0.05);
     const redirected = adBridge.openStore(config.storeUrl);
-    ui.showToast(redirected ? 'OPENING STORE…' : 'CTA_CLICKED · STORE REDIRECT (DEMO)');
+    ui.showToast(redirected ? 'OPENING STORE\u2026' : 'CTA_CLICKED \u00b7 STORE REDIRECT (DEMO)');
+    if (!fromStartLine) return;
+
+    this.state = 'launched';
+    this.disarmHint();
+    this.hintDelay = 0;
+    this.runSequence((seq) =>
+      race.launch(seq, {
+        onCountdown: (beat) => ui.showCountdown(beat === 'GO' ? 'GO!' : String(beat)),
+        onCliffhanger: () => {
+          ui.showRaceCliffhanger(config.ctaFollowUpLabel);
+          audio.play('powerUp');
+          this.armHint(CLIFFHANGER_HINT_DELAY);
+        },
+      }),
+    );
   }
 
   private handleReplay(): void {
-    if (this.state !== 'reveal') return;
-    const { analytics, tweener, fx, character, choices, ui, audio } = this.ctx;
+    if (this.state !== 'race' && this.state !== 'launched') return;
+    const { analytics, tweener, fx, character, choices, ui, audio, race } = this.ctx;
     this.plays++;
     analytics.track('RESTARTED', { playCount: this.plays });
 
@@ -190,6 +207,7 @@ export class GameFlow {
     this.generation = new AbortController();
     tweener.killAll();
     fx.clear();
+    race.reset();
     character.reset();
     choices.reset();
     this.applyConfig(choices.config, false);
@@ -244,16 +262,18 @@ export class GameFlow {
       name: result.name,
       model: result.model,
       latencyMs: result.latencyMs,
-      personality: request.personality,
+      gadget: request.gadget,
       power: request.power,
       bodyType: request.bodyType,
     });
     this.applyConfig(result.config, true);
-    this.reveal(result);
+    await this.reveal(result, seq);
+    this.enterRace(result);
   }
 
-  private reveal(result: AICharacterResult): void {
-    const { ui, audio, camera, analytics, config } = this.ctx;
+  /** Celebration beat: name, tagline, confetti — then the race set rolls in. */
+  private async reveal(result: AICharacterResult, seq: Sequence): Promise<void> {
+    const { ui, audio, camera } = this.ctx;
     this.state = 'reveal';
     ui.showReveal({
       name: result.name,
@@ -261,16 +281,42 @@ export class GameFlow {
       bodyLabel: getBodyType(result.config.bodyType).label,
       tagline: result.tagline,
       description: result.description,
-      stats: result.stats,
-      ctaLabel: config.ctaLabel,
     });
     camera.setShot('reveal');
     camera.punch(0.08);
     audio.play('success');
     this.celebrate(1);
-    this.revealTimer = REVEAL_CHEER_INTERVAL;
+    await seq.wait(REVEAL_HOLD);
+  }
+
+  /** The end card: the racer on the start line of a track themed by its power. */
+  private enterRace(result: AICharacterResult): void {
+    const { ui, race, analytics, audio, config } = this.ctx;
+    const power = getPower(result.config.power);
+    const gadget = getGadget(result.config.gadget);
+    const body = getBodyType(result.config.bodyType);
+    if (!power || !gadget) return;
+
+    this.state = 'race';
+    this.busy = false;
+    race.enter(power);
+    ui.showRace({
+      name: result.name,
+      hazardLabel: power.hazard.label,
+      hazardIcon: power.hazard.icon,
+      pickupLabel: power.pickup.label,
+      pickupIcon: power.icon,
+      chips: [
+        { icon: gadget.icon, label: gadget.label },
+        { icon: power.icon, label: power.label },
+        { icon: body.icon, label: body.ability },
+      ],
+      stats: result.stats,
+      ctaLabel: config.ctaLabel,
+    });
+    audio.play('whoosh');
     analytics.track('PLAYABLE_COMPLETED', { durationMs: Math.round(performance.now() - this.startedAt), name: result.name });
-    this.armHint(REVEAL_HINT_DELAY);
+    this.armHint(RACE_HINT_DELAY);
   }
 
   /** Never rejects: any failure (or a restart) falls back to the local generator. */
@@ -416,7 +462,8 @@ export class GameFlow {
   }
 
   private rearmHint(): void {
-    if (!this.busy && this.state !== 'building' && this.hintDelay > 0) this.hintCountdown = this.hintDelay;
+    const idleState = this.state !== 'building' && this.state !== 'reveal';
+    if (!this.busy && idleState && this.hintDelay > 0) this.hintCountdown = this.hintDelay;
   }
 
   private disarmHint(): void {

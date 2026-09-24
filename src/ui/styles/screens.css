@@ -82,13 +82,15 @@
   animation: pop-in 0.45s var(--ease-back);
 }
 
-/* The build title sits in the top row, so keep it clear of the corner HUD buttons. */
-.screen--build .screen__top {
+/* Titles that sit in the top row stay clear of the corner HUD buttons. */
+.screen--build .screen__top,
+.screen--race .screen__top {
   padding: max(48px, calc(var(--u) * 12)) 0 0;
 }
 
 @media (min-aspect-ratio: 5/4) {
-  .screen--build .screen__top {
+  .screen--build .screen__top,
+  .screen--race .screen__top {
     padding-top: 0;
   }
 }
@@ -127,5 +129,234 @@
   .namecard {
     padding-top: calc(var(--u) * 5);
     padding-bottom: calc(var(--u) * 3);
+  }
+}
+
+/* Race end card ------------------------------------------------------ */
+
+.race-banner {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 5) calc(var(--u) * 1.4) calc(var(--u) * 1.4);
+  border-radius: var(--radius-pill);
+  border: calc(var(--u) * 0.8) solid var(--c-white);
+  background: linear-gradient(180deg, #ff6d5c 0%, #e3243b 100%);
+  box-shadow:
+    0 calc(var(--u) * 1.3) 0 #9b1428,
+    0 calc(var(--u) * 3) calc(var(--u) * 4) rgba(20, 10, 60, 0.35);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.race-banner.is-swapping {
+  animation: pop-in 0.45s var(--ease-back);
+}
+
+.race-banner__icon {
+  --ic-ink: #e3243b;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 10);
+  padding: calc(var(--u) * 1.5);
+  border-radius: 50%;
+  background: var(--c-ink);
+}
+
+.race-banner__icon > span,
+.race-banner__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.race-banner__text {
+  --ink: #9b1428;
+  --ow: calc(var(--u) * 0.6);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 6.2);
+  white-space: nowrap;
+}
+
+.race-sub {
+  --ow: calc(var(--u) * 0.45);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  margin: 0;
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 3.6) calc(var(--u) * 1.1) calc(var(--u) * 1.6);
+  border-radius: var(--radius-pill);
+  background: var(--c-glass);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 4.2);
+  letter-spacing: 0.04em;
+  transition: opacity 0.3s ease;
+}
+
+.race-sub__icon {
+  --ic-ink: var(--c-ink);
+  display: grid;
+  width: calc(var(--u) * 5.6);
+  height: calc(var(--u) * 5.6);
+}
+
+.race-sub__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.screen--race.is-cliffhanger .race-banner {
+  padding-left: calc(var(--u) * 5);
+  background: linear-gradient(180deg, #ffe766 0%, #ffb400 100%);
+  box-shadow:
+    0 calc(var(--u) * 1.3) 0 #c26f00,
+    0 calc(var(--u) * 3) calc(var(--u) * 4) rgba(20, 10, 60, 0.35);
+}
+
+.screen--race.is-cliffhanger .race-banner__icon {
+  display: none;
+}
+
+.screen--race.is-cliffhanger .race-banner__text {
+  --ink: #a35300;
+  font-size: calc(var(--u) * 5.6);
+}
+
+.screen--race.is-cliffhanger .race-sub {
+  opacity: 0;
+}
+
+.racer-card {
+  width: calc(var(--u) * 86);
+  padding: calc(var(--u) * 2.8) calc(var(--u) * 4.5) calc(var(--u) * 3.4);
+  border-radius: var(--radius-l);
+  background: var(--c-panel);
+  box-shadow:
+    0 calc(var(--u) * 1.6) 0 rgba(29, 22, 70, 0.28),
+    0 calc(var(--u) * 3) calc(var(--u) * 6) rgba(20, 10, 60, 0.3);
+  color: var(--c-ink);
+}
+
+.racer-card__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * 1.6);
+}
+
+.racer-card__name {
+  --ow: calc(var(--u) * 0.75);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 10.5);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--energy);
+  white-space: nowrap;
+}
+
+.racer-card__chips {
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--u) * 1.2);
+}
+
+.chip {
+  --ic-ink: var(--c-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.9);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 2.2) calc(var(--u) * 0.8) calc(var(--u) * 0.9);
+  border-radius: var(--radius-pill);
+  background: var(--c-ink);
+  color: var(--c-white);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 3.2);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.chip__icon {
+  display: grid;
+  width: calc(var(--u) * 4.6);
+  height: calc(var(--u) * 4.6);
+}
+
+.chip__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.racer-card .stats {
+  margin-top: calc(var(--u) * 2.6);
+}
+
+.btn--run {
+  gap: calc(var(--u) * 2.2);
+}
+
+.btn--run > svg {
+  position: relative;
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
+  filter: drop-shadow(0 calc(var(--u) * 0.5) 0 var(--c-cta-edge));
+}
+
+.countdown {
+  --ow: calc(var(--u) * 1.4);
+  position: absolute;
+  z-index: 42;
+  translate: -50% -50%;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 30);
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.countdown.is-on {
+  animation: countdown-pop 0.42s var(--ease-out) forwards;
+}
+
+.countdown.is-go {
+  color: var(--c-cta-top);
+  font-size: calc(var(--u) * 26);
+}
+
+.countdown.is-go.is-on {
+  animation-duration: 0.75s;
+}
+
+.freeze-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 42%, rgba(10, 5, 40, 0.55) 100%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.freeze-vignette.is-on {
+  opacity: 1;
+}
+
+@keyframes countdown-pop {
+  0% {
+    opacity: 0;
+    scale: 2.2;
+  }
+  25% {
+    opacity: 1;
+    scale: 0.95;
+  }
+  65% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 0.8;
   }
 }

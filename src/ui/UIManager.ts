@@ -10,11 +10,12 @@ import { UI_ICONS } from './icons';
 import { BuildScreen } from './screens/BuildScreen';
 import { ChoiceScreen } from './screens/ChoiceScreen';
 import { IntroScreen } from './screens/IntroScreen';
+import { RaceScreen } from './screens/RaceScreen';
 import { RevealScreen } from './screens/RevealScreen';
 import type { Screen } from './screens/Screen';
-import type { BindButton, ChoiceScreenView, ProgressSlotView, RevealView, UIEvents } from './types';
+import type { BindButton, ChoiceScreenView, ProgressSlotView, RaceView, RevealView, UIEvents } from './types';
 
-export type SceneName = 'intro' | 'choice' | 'build' | 'reveal';
+export type SceneName = 'intro' | 'choice' | 'build' | 'reveal' | 'race';
 
 /**
  * DOM game UI. Renders view models, reports intent through `events`, and
@@ -32,7 +33,10 @@ export class UIManager {
   private readonly choice: ChoiceScreen;
   private readonly build: BuildScreen;
   private readonly reveal: RevealScreen;
+  private readonly race: RaceScreen;
   private readonly hand = new HandHint();
+  private readonly countdown: HTMLElement;
+  private readonly vignette: HTMLElement;
   private readonly toast: HTMLElement;
   private readonly toastText: HTMLElement;
   private readonly flashLayer: HTMLElement;
@@ -57,7 +61,8 @@ export class UIManager {
     this.intro = new IntroScreen(bind, () => this.events.emit('start', undefined));
     this.choice = new ChoiceScreen(bind, (stepId, optionId, index) => this.events.emit('select', { stepId, optionId, index }));
     this.build = new BuildScreen(tweener);
-    this.reveal = new RevealScreen(
+    this.reveal = new RevealScreen();
+    this.race = new RaceScreen(
       bind,
       () => this.events.emit('cta', undefined),
       () => this.events.emit('replay', undefined),
@@ -70,12 +75,17 @@ export class UIManager {
     this.toast = el('div', 'toast', { role: 'status', 'aria-live': 'polite' }, [this.toastText]);
     this.toast.prepend(fromMarkup(UI_ICONS.check));
     this.flashLayer = el('div', 'flash', { 'aria-hidden': 'true' });
+    this.countdown = el('div', 'countdown outlined', { 'aria-live': 'assertive' });
+    this.vignette = el('div', 'freeze-vignette', { 'aria-hidden': 'true' });
 
     this.root.append(
+      this.vignette,
       this.intro.root,
       this.choice.root,
       this.build.root,
       this.reveal.root,
+      this.race.root,
+      this.countdown,
       this.soundButton,
       this.hand.root,
       this.toast,
@@ -115,6 +125,27 @@ export class UIManager {
   showReveal(view: RevealView): void {
     this.reveal.render(view);
     this.switchTo(this.reveal, 'reveal');
+  }
+
+  showRace(view: RaceView): void {
+    this.vignette.classList.remove('is-on');
+    this.race.render(view);
+    this.switchTo(this.race, 'race');
+  }
+
+  /** Big 3 / 2 / 1 / GO! pop over the stage. */
+  showCountdown(text: string): void {
+    const { x, y, width, height } = this.stageRect;
+    this.countdown.style.left = `${Math.round(x + width / 2)}px`;
+    this.countdown.style.top = `${Math.round(y + height * 0.32)}px`;
+    this.countdown.textContent = text;
+    this.countdown.classList.toggle('is-go', text.startsWith('GO'));
+    replayClass(this.countdown, 'is-on');
+  }
+
+  showRaceCliffhanger(ctaLabel: string): void {
+    this.race.showCliffhanger(ctaLabel);
+    this.vignette.classList.add('is-on');
   }
 
   setTheme(theme: ThemeColors, energy: number): void {
@@ -175,6 +206,7 @@ export class UIManager {
 
   private switchTo(screen: Screen, scene: SceneName): void {
     this.hideHint();
+    if (scene !== 'race') this.vignette.classList.remove('is-on');
     if (this.active !== screen) this.active?.hide();
     this.active = screen;
     screen.show();

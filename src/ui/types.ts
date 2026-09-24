@@ -30,6 +30,21 @@ export interface RevealView {
   bodyLabel: string;
   tagline: string;
   description: string;
+}
+
+export interface RaceChipView {
+  icon: IconId;
+  label: string;
+}
+
+/** The end card: race rules for the chosen power, the racer card and the CTA. */
+export interface RaceView {
+  name: string;
+  hazardLabel: string;
+  hazardIcon: IconId;
+  pickupLabel: string;
+  pickupIcon: IconId;
+  chips: RaceChipView[];
   stats: StatBlock;
   ctaLabel: string;
 }

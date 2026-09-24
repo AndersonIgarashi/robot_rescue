@@ -1,35 +1,16 @@
-import { Group, Shape, type Object3D } from 'three';
+import { Group, Path, Shape, type Object3D } from 'three';
 import { TAU, clamp } from '../../utils/math';
 import type { AccessoryId } from '../types';
 import { EmitterState, streamFrom, type AttachmentFactory } from './Attachment';
+import type { BodyRig } from './BodyRig';
 import { faceLayout } from './face';
 import { HALF_PI, addGroup, addMesh } from './kit';
 
 const SIDES = [-1, 1] as const;
+const MISSILE_RED = 0xff4d5e;
 
-function starShape(): Shape {
-  const shape = new Shape();
-  for (let i = 0; i < 10; i++) {
-    const radius = i % 2 === 0 ? 0.1 : 0.045;
-    const angle = (i / 10) * TAU + Math.PI / 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) shape.moveTo(x, y);
-    else shape.lineTo(x, y);
-  }
-  shape.closePath();
-  return shape;
-}
-
-function heartShape(): Shape {
-  const shape = new Shape();
-  shape.moveTo(0, -0.09);
-  shape.bezierCurveTo(-0.03, -0.06, -0.11, -0.02, -0.11, 0.03);
-  shape.bezierCurveTo(-0.11, 0.08, -0.05, 0.1, 0, 0.05);
-  shape.bezierCurveTo(0.05, 0.1, 0.11, 0.08, 0.11, 0.03);
-  shape.bezierCurveTo(0.11, -0.02, 0.03, -0.06, 0, -0.09);
-  return shape;
-}
+/** Scale for props sized on the chunky robot (chest width 0.58). */
+const bodyScale = (rig: BodyRig, min: number): number => clamp(rig.metrics.chestWidth / 0.58, min, 1);
 
 function finShape(): Shape {
   const shape = new Shape();
@@ -40,61 +21,71 @@ function finShape(): Shape {
   return shape;
 }
 
+/** Heater-shield badge with a round window for the chest core. */
+function emblemShape(): Shape {
+  const shape = new Shape();
+  shape.moveTo(0, 0.19);
+  shape.lineTo(0.18, 0.13);
+  shape.lineTo(0.16, -0.04);
+  shape.quadraticCurveTo(0.11, -0.15, 0, -0.21);
+  shape.quadraticCurveTo(-0.11, -0.15, -0.16, -0.04);
+  shape.lineTo(-0.18, 0.13);
+  shape.closePath();
+  const window = new Path();
+  window.absarc(0, 0, 0.135, 0, TAU, true);
+  shape.holes.push(window);
+  return shape;
+}
+
 /** Registry: accessory id -> factory. Adding an accessory = adding one entry. */
 export const ACCESSORY_FACTORIES: Record<AccessoryId, AttachmentFactory> = {
-  glasses: ({ geo, mat }, rig) => {
-    const { faceWidth, faceHeight } = rig.metrics;
-    const { eyeX, eyeY, eyeSize: s } = faceLayout(faceWidth, faceHeight);
+  // --- SHIELD: defense -------------------------------------------------------
+
+  armShield: ({ geo, mat }, rig) => {
+    const k = bodyScale(rig, 0.6);
     const root = new Group();
-    const w = s * 1.75;
-    const h = s * 1.4;
-    const t = Math.max(0.018, s * 0.16);
-    for (const side of SIDES) {
-      addMesh(root, geo.roundedFrame(w, h, s * 0.42, t, 0.03), mat.accent, { p: [side * eyeX, eyeY, 0.03] });
-    }
-    addMesh(root, geo.roundedBox(Math.max(0.02, eyeX * 2 - w + t), t, 0.03, t * 0.45), mat.accent, {
-      p: [0, eyeY + h * 0.18, 0.03],
-    });
-    return { id: 'glasses', mounts: [{ socket: 'face', object: root }] };
+    // Built facing +Z, then turned to face out-and-forward from the left hand.
+    const shield = addGroup(root, [-0.12 * k, 0.02, 0.09 * k]);
+    shield.rotation.y = -0.93;
+    shield.scale.setScalar(k);
+    addMesh(shield, geo.cylinder(), mat.secondary, { r: [HALF_PI, 0, 0], s: [0.27, 0.06, 0.27] });
+    addMesh(shield, geo.torus(0.1), mat.energy, { p: [0, 0, 0.012], s: 0.27 });
+    addMesh(shield, geo.cylinder(1, 6), mat.accent, { p: [0, 0, 0.03], r: [HALF_PI, 0, 0], s: [0.12, 0.04, 0.12] });
+    addMesh(shield, geo.sphere(), mat.energy, { p: [0, 0, 0.055], s: 0.04 });
+    return { id: 'armShield', mounts: [{ socket: 'handL', object: root }] };
   },
 
-  headset: ({ geo, mat }, rig) => {
-    const { earX, earY, headTopY, headWidth } = rig.metrics;
-    const radius = Math.max(earX, headTopY - earY) + 0.05;
-    const podRadius = 0.15 * clamp(headWidth, 0.7, 1);
-    const root = new Group();
-    root.position.y = earY;
-    for (const side of SIDES) {
-      addMesh(root, geo.cylinder(), mat.secondary, { p: [side * radius, 0, 0], r: [0, 0, HALF_PI], s: [podRadius, 0.1, podRadius] });
-      addMesh(root, geo.torus(0.28), mat.energy, { p: [side * (radius + 0.055), 0, 0], r: [0, HALF_PI, 0], s: podRadius * 0.62 });
-    }
-    addMesh(root, geo.torus(0.035 / radius, Math.PI), mat.secondary, { s: radius });
-    addMesh(root, geo.cylinder(), mat.joint, { p: [-radius * 0.93, -0.1, 0.14], r: [HALF_PI, 0, -0.35], s: [0.016, 0.26, 0.016] });
-    addMesh(root, geo.sphere(), mat.energy, { p: [-radius * 0.86, -0.1, 0.27], s: 0.04 });
-    return { id: 'headset', mounts: [{ socket: 'headCenter', object: root }], hidesAntenna: true };
-  },
-
-  dataOrbit: ({ geo, mat }, rig) => {
-    const radius = rig.metrics.headWidth * 0.62 + 0.28;
+  shieldOrbit: ({ geo, mat }, rig) => {
+    const radius = rig.metrics.headWidth * 0.62 + 0.3;
     const root = new Group();
     const ring = addGroup(root);
-    ring.rotation.set(0.35, 0, -0.25);
+    ring.rotation.set(0.28, 0, -0.18);
     const spin = addGroup(ring);
     for (let i = 0; i < 3; i++) {
       const angle = (i / 3) * TAU;
-      addMesh(spin, geo.roundedBox(0.11, 0.11, 0.11, 0.03), mat.energy, {
+      addMesh(spin, geo.cylinder(1, 6), mat.energy, {
         p: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius],
-        r: [0.6, angle, 0.4],
+        r: [0, -angle, HALF_PI],
+        s: [0.13, 0.025, 0.13],
       });
     }
     return {
-      id: 'dataOrbit',
+      id: 'shieldOrbit',
       mounts: [{ socket: 'headCenter', object: root }],
       update: ({ dt }) => {
-        spin.rotation.y += dt * 1.4;
+        spin.rotation.y += dt * 1.3;
       },
     };
   },
+
+  chestEmblem: ({ geo, mat }, rig) => {
+    const k = rig.metrics.chestWidth / 0.58;
+    const root = new Group();
+    addMesh(root, geo.extrude('emblem', emblemShape, 0.03, 0.01), mat.accent, { p: [0, 0.01 * k, 0.012], s: k });
+    return { id: 'chestEmblem', mounts: [{ socket: 'chest', object: root }] };
+  },
+
+  // --- TURBO: speed ----------------------------------------------------------
 
   headFin: ({ geo, mat }, rig) => {
     const scale = rig.metrics.headWidth * 0.9;
@@ -108,7 +99,7 @@ export const ACCESSORY_FACTORIES: Record<AccessoryId, AttachmentFactory> = {
   },
 
   jetBoosters: ({ geo, mat }, rig) => {
-    const scale = clamp(rig.metrics.chestWidth / 0.58, 0.7, 1);
+    const scale = bodyScale(rig, 0.7);
     const root = new Group();
     const nozzles: Object3D[] = [];
     for (const side of SIDES) {
@@ -149,65 +140,57 @@ export const ACCESSORY_FACTORIES: Record<AccessoryId, AttachmentFactory> = {
     return { id: 'speedStripes', mounts: [{ socket: 'chest', object: root }] };
   },
 
-  beret: ({ geo, mat }, rig) => {
-    const k = clamp(rig.metrics.headWidth, 0.75, 1.05);
-    const root = new Group();
-    const cap = addGroup(root, [0.04 * k, -0.02 * k, 0]);
-    cap.rotation.set(-0.12, 0, 0.28);
-    addMesh(cap, geo.sphere(), mat.secondary, { p: [0, 0.05 * k, 0], s: [0.42 * k, 0.15 * k, 0.4 * k] });
-    addMesh(cap, geo.cylinder(), mat.secondary, { p: [0, 0.21 * k, 0], s: [0.03 * k, 0.08 * k, 0.03 * k] });
-    addMesh(cap, geo.torus(0.16), mat.accent, { p: [0, -0.02 * k, 0], r: [HALF_PI, 0, 0], s: 0.37 * k });
-    return { id: 'beret', mounts: [{ socket: 'headTop', object: root }], hidesAntenna: true };
-  },
+  // --- BLASTER: attack -------------------------------------------------------
 
-  paintBrush: ({ geo, mat }, rig) => {
+  armCannon: ({ geo, mat }, rig) => {
     const root = new Group();
-    const brush = addGroup(root);
-    brush.rotation.set(0.9, 0, -0.15);
-    brush.scale.setScalar(clamp(rig.metrics.chestWidth / 0.58, 0.65, 1));
-    addMesh(brush, geo.cylinder(), mat.accent, { p: [0, 0.1, 0], s: [0.032, 0.56, 0.032] });
-    addMesh(brush, geo.cylinder(), mat.joint, { p: [0, 0.41, 0], s: [0.042, 0.08, 0.042] });
-    addMesh(brush, geo.sphere(), mat.secondary, { p: [0, 0.5, 0], s: [0.055, 0.11, 0.055] });
-    addMesh(brush, geo.sphere(), mat.energy, { p: [0, 0.58, 0], s: 0.04 });
-    const tip = addGroup(brush, [0, 0.6, 0]);
+    const cannon = addGroup(root);
+    cannon.scale.setScalar(bodyScale(rig, 0.62));
+    // Barrel runs along the arm (-Y) and swallows the hand.
+    addMesh(cannon, geo.cylinder(), mat.secondary, { p: [0, -0.12, 0], s: [0.14, 0.46, 0.14] });
+    for (const y of [0.06, -0.2]) {
+      addMesh(cannon, geo.torus(0.22), mat.accent, { p: [0, y, 0], r: [HALF_PI, 0, 0], s: 0.15 });
+    }
+    addMesh(cannon, geo.cylinder(0.78), mat.joint, { p: [0, -0.39, 0], s: [0.16, 0.08, 0.16] });
+    addMesh(cannon, geo.cylinder(), mat.energy, { p: [0, -0.435, 0], s: [0.1, 0.02, 0.1] });
+    const muzzle = addGroup(cannon, [0, -0.46, 0]);
     const state = new EmitterState();
     return {
-      id: 'paintBrush',
+      id: 'armCannon',
       mounts: [{ socket: 'handR', object: root }],
       update: (ctx) => {
-        if (ctx.active) streamFrom(ctx, state, tip, 'paintDrop', 2.5);
+        if (ctx.active) streamFrom(ctx, state, muzzle, 'spark', 4);
       },
     };
   },
 
-  shapeOrbit: ({ geo, mat }, rig) => {
-    const radius = rig.metrics.headWidth * 0.62 + 0.32;
+  missilePods: ({ geo, mat }, rig) => {
     const root = new Group();
-    const ring = addGroup(root);
-    ring.rotation.set(0.3, 0, 0.18);
-    const spin = addGroup(ring);
-    const shapes = [
-      { geometry: geo.extrude('star', starShape, 0.05, 0.012), color: 0xffd23f, scale: 0.95 },
-      { geometry: geo.extrude('heart', heartShape, 0.05, 0.012), color: 0xff5fa8, scale: 0.95 },
-      { geometry: geo.torus(0.42), color: 0x4ef0c8, scale: 0.075 },
-      { geometry: geo.octahedron(), color: 0x5b8cff, scale: 0.085 },
-    ];
-    const holders = shapes.map((shape, i) => {
-      const angle = (i / shapes.length) * TAU;
-      const holder = addGroup(spin, [Math.cos(angle) * radius, 0, Math.sin(angle) * radius]);
-      addMesh(holder, shape.geometry, mat.candy(shape.color), { s: shape.scale });
-      return holder;
+    const pod = addGroup(root, [0, 0.02, -0.06]);
+    pod.rotation.x = -0.28;
+    pod.scale.setScalar(bodyScale(rig, 0.65));
+    addMesh(pod, geo.roundedBox(0.46, 0.28, 0.22, 0.06), mat.secondary);
+    addMesh(pod, geo.roundedBox(0.48, 0.05, 0.24, 0.02), mat.accent, { p: [0, 0.1, 0] });
+    for (const x of [-0.13, 0, 0.13]) {
+      addMesh(pod, geo.cylinder(), mat.primary, { p: [x, 0.24, 0], s: [0.05, 0.22, 0.05] });
+      addMesh(pod, geo.cylinder(0), mat.candy(MISSILE_RED), { p: [x, 0.39, 0], s: [0.05, 0.09, 0.05] });
+    }
+    return { id: 'missilePods', mounts: [{ socket: 'back', object: root }] };
+  },
+
+  scopeVisor: ({ geo, mat }, rig) => {
+    const { faceWidth, faceHeight } = rig.metrics;
+    const { eyeX, eyeY, eyeSize: s } = faceLayout(faceWidth, faceHeight);
+    const size = s * 1.7;
+    const thickness = Math.max(0.016, s * 0.16);
+    const root = new Group();
+    const scope = addGroup(root, [eyeX, eyeY, 0.03]);
+    addMesh(scope, geo.roundedFrame(size, size, size / 2, thickness, 0.03), mat.accent);
+    addMesh(scope, geo.roundedBox(size * 0.8, 0.012, 0.012, 0.005), mat.energy, { p: [0, 0, 0.018] });
+    addMesh(scope, geo.roundedBox(0.012, size * 0.8, 0.012, 0.005), mat.energy, { p: [0, 0, 0.018] });
+    addMesh(scope, geo.roundedBox(faceWidth * 0.16, thickness, 0.03, thickness * 0.4), mat.accent, {
+      p: [size / 2 + faceWidth * 0.07, 0, 0],
     });
-    return {
-      id: 'shapeOrbit',
-      mounts: [{ socket: 'headCenter', object: root }],
-      update: ({ dt, time }) => {
-        spin.rotation.y += dt * 0.9;
-        holders.forEach((holder, i) => {
-          holder.rotation.y += dt * 2.2;
-          holder.position.y = Math.sin(time * 2.4 + i * 1.7) * 0.05;
-        });
-      },
-    };
+    return { id: 'scopeVisor', mounts: [{ socket: 'face', object: root }] };
   },
 };

@@ -8,7 +8,9 @@ import {
   TorusGeometry,
   type BufferGeometry,
 } from 'three';
+import type { Tweener } from '../core/Tweener';
 import { STAGE_COLORS } from '../data/theme';
+import { Easing } from '../utils/easing';
 
 interface Floater {
   mesh: Mesh;
@@ -57,7 +59,21 @@ export class Backdrop {
     });
   }
 
+  /** Clears the floaters away from the race track view (and brings them back on replay). */
+  setVisible(visible: boolean, tweener: Tweener): void {
+    const scale = this.root.scale;
+    tweener.killTweensOf(scale);
+    this.root.visible = true;
+    const target = visible ? 1 : 0.001;
+    tweener.to(scale, { x: target, y: target, z: target }, {
+      duration: 0.5,
+      ease: visible ? Easing.outBack : Easing.inCubic,
+      onComplete: () => (this.root.visible = visible),
+    });
+  }
+
   update(dt: number, time: number): void {
+    if (!this.root.visible) return;
     for (const floater of this.floaters) {
       floater.mesh.position.y = floater.baseY + Math.sin(time * 0.6 + floater.phase) * 0.12;
       floater.mesh.rotation.x += floater.spinX * dt;

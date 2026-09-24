@@ -2,7 +2,7 @@ import type { VisualTuning } from '../character/CharacterConfig';
 import { resolveCharacterConfig } from '../character/CharacterConfigFactory';
 import { POSES } from '../character/poses';
 import type { PoseId } from '../character/types';
-import { getBodyType, getPersonality, getPower } from '../data/catalog';
+import { getBodyType, getGadget, getPower } from '../data/catalog';
 import type { StatBlock } from '../data/types';
 import { clamp } from '../utils/math';
 import type { AICharacterRequest, AICharacterResult } from './IAICharacterGenerator';
@@ -12,24 +12,24 @@ const titleCase = (value: string): string => value.charAt(0) + value.slice(1).to
 
 /** Copy the templates produce when a generator supplies no text of its own. */
 export function composeCopy(request: AICharacterRequest): { tagline: string; description: string } {
-  const personality = getPersonality(request.personality);
+  const gadget = getGadget(request.gadget);
   const power = getPower(request.power);
   const body = getBodyType(request.bodyType);
-  if (!personality || !power) return { tagline: 'Your one-of-a-kind AI', description: 'A brand-new AI, built by you.' };
+  if (!gadget || !power) return { tagline: 'Your one-of-a-kind racer', description: 'A brand-new AI racer, built by you.' };
   return {
-    tagline: `${titleCase(personality.label)} AI powered by ${power.title}`,
-    description: `${personality.article} ${personality.adjective} ${body.noun} powered by ${power.phrase}.`,
+    tagline: `${titleCase(gadget.label)} racer powered by ${power.title}`,
+    description: `${gadget.article} ${gadget.adjective} ${body.noun} powered by ${power.phrase}.`,
   };
 }
 
 export function baseStats(request: AICharacterRequest): StatBlock {
-  const personality = getPersonality(request.personality);
+  const gadget = getGadget(request.gadget);
   const bonuses: Array<Partial<StatBlock> | undefined> = [getPower(request.power)?.stats, getBodyType(request.bodyType).stats];
-  const stats: StatBlock = { ...(personality?.stats ?? { brain: 60, speed: 60, style: 60 }) };
+  const stats: StatBlock = { ...(gadget?.stats ?? { speed: 60, armor: 60, power: 60 }) };
   for (const bonus of bonuses) {
-    stats.brain += bonus?.brain ?? 0;
     stats.speed += bonus?.speed ?? 0;
-    stats.style += bonus?.style ?? 0;
+    stats.armor += bonus?.armor ?? 0;
+    stats.power += bonus?.power ?? 0;
   }
   return stats;
 }
@@ -69,9 +69,9 @@ export function composeResult(input: ComposeInput): AICharacterResult {
     config: resolveCharacterConfig(input.request, input.visual),
     visual: input.visual,
     stats: {
-      brain: clampStat(input.stats.brain),
       speed: clampStat(input.stats.speed),
-      style: clampStat(input.stats.style),
+      armor: clampStat(input.stats.armor),
+      power: clampStat(input.stats.power),
     },
     latencyMs: Math.round(input.latencyMs),
   };

@@ -1,7 +1,7 @@
 import { NAME_RULES, type NameRule } from '../data/names';
 import type { AICharacterRequest } from './IAICharacterGenerator';
 
-const FIELDS = ['personality', 'power', 'bodyType'] as const;
+const FIELDS = ['gadget', 'power', 'bodyType'] as const;
 
 /** Picks the most specific matching name rule (see data/names.ts). */
 export function resolveName(request: AICharacterRequest, rules: readonly NameRule[] = NAME_RULES): string {

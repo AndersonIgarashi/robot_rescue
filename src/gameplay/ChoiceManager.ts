@@ -1,7 +1,7 @@
 import type { AICharacterRequest } from '../ai/IAICharacterGenerator';
 import type { CharacterConfig } from '../character/CharacterConfig';
 import { resolveCharacterConfig, resolveTheme } from '../character/CharacterConfigFactory';
-import { isBodyTypeId, isPersonalityId, isPowerId, type Selections } from '../data/catalog';
+import { isBodyTypeId, isGadgetId, isPowerId, type Selections } from '../data/catalog';
 import { CHOICE_STEPS, type ChoiceStepDef, type SelectionKey } from '../data/steps';
 import type { OptionDef, ThemeColors } from '../data/types';
 
@@ -14,9 +14,9 @@ export interface ChoiceChange {
 
 function assign(selections: Selections, key: SelectionKey, id: string): boolean {
   switch (key) {
-    case 'personality':
-      if (!isPersonalityId(id)) return false;
-      selections.personality = id;
+    case 'gadget':
+      if (!isGadgetId(id)) return false;
+      selections.gadget = id;
       return true;
     case 'power':
       if (!isPowerId(id)) return false;
@@ -63,8 +63,8 @@ export class ChoiceManager {
 
   /** The AI request once every step has an answer. */
   toRequest(): AICharacterRequest | null {
-    const { personality, power, bodyType } = this.selections;
-    return personality && power && bodyType ? { personality, power, bodyType } : null;
+    const { gadget, power, bodyType } = this.selections;
+    return gadget && power && bodyType ? { gadget, power, bodyType } : null;
   }
 
   reset(): void {
