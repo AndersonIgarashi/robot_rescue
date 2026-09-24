@@ -55,6 +55,8 @@ export class CharacterController {
   private blinkTimer = 2.2;
   private blinkPhase = -1;
   private joyTimer = 0;
+  private waveTimer = 0;
+  private waveDuration = 1;
   private clock = 0;
   private readonly hipBaseY = new WeakMap<Group, number>();
 
@@ -82,6 +84,13 @@ export class CharacterController {
     this.airborne = true;
     this.hopVelocity = Math.max(this.hopVelocity, velocity);
     this.squash.impulse(velocity * 0.55);
+  }
+
+  /** Friendly "hi!" wave with the right arm — used to draw the eye on the intro. */
+  wave(duration = 1.3): void {
+    this.waveTimer = duration;
+    this.waveDuration = duration;
+    this.expressJoy(duration * 0.8);
   }
 
   expressJoy(duration: number): void {
@@ -203,6 +212,7 @@ export class CharacterController {
     this.yawVelocity = 0;
     this.dragging = false;
     this.joyTimer = 0;
+    this.waveTimer = 0;
     this.setJoy(false);
     this.assembler.materials.setPowerLevel(1, 0);
     void this.assembler.setAttachmentsVisible(true, false);
@@ -268,6 +278,13 @@ export class CharacterController {
     const sway = Math.sin(t * set.bobFrequency + 1.2) * set.armSway;
     rig.armL.rotation.set(this.pose.armLx * armScale, 0, this.pose.armLz * armScale - sway);
     rig.armR.rotation.set(this.pose.armRx * armScale, 0, this.pose.armRz * armScale + sway);
+    if (this.waveTimer > 0) {
+      // Blend in/out over the first/last 0.25 s, waving around a raised arm.
+      const envelope = Math.min(1, this.waveTimer / 0.25, (this.waveDuration - this.waveTimer) / 0.25 + 0.001);
+      const raised = 2.5 + Math.sin(this.clock * 16) * 0.35;
+      rig.armR.rotation.z += (raised * armScale - rig.armR.rotation.z) * Math.max(0, envelope);
+      rig.head.rotation.z += 0.12 * Math.max(0, envelope) * metrics.headTiltScale;
+    }
 
     for (const spinner of rig.spinners) spinner.rotation.y += dt * 30;
 
@@ -292,6 +309,7 @@ export class CharacterController {
       this.joyTimer -= dt;
       if (this.joyTimer <= 0) this.setJoy(false);
     }
+    if (this.waveTimer > 0) this.waveTimer = Math.max(0, this.waveTimer - dt);
   }
 
   private updateHop(dt: number): void {

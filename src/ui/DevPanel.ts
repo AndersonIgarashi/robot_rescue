@@ -32,7 +32,6 @@ export class DevPanel {
   readonly panel: HTMLElement;
   private readonly values = new Map<string, HTMLElement>();
   private readonly log: HTMLElement;
-  private readonly meta: HTMLElement;
   private open = false;
   private frames = 0;
   private elapsed = 0;
@@ -50,13 +49,13 @@ export class DevPanel {
       }),
     );
     this.log = el('ul', 'dev-log');
-    this.meta = el('div', 'dev-meta', {}, [`session ${analytics.sessionId} · ad env: ${environment}`]);
+    const meta = el('div', 'dev-meta', {}, [`session ${analytics.sessionId} · ad env: ${environment}`]);
     this.panel = el('aside', 'dev-panel', { 'aria-label': 'Developer overlay' }, [
       el('h3', '', {}, ['RENDER']),
       stats,
       el('h3', '', {}, ['ANALYTICS EVENTS']),
       this.log,
-      this.meta,
+      meta,
     ]);
 
     input.bind(this.toggle, { click: () => this.setOpen(!this.open) });

@@ -29,7 +29,9 @@ window.addEventListener('unhandledrejection', (event) => {
 function boot(): void {
   const root = document.getElementById('app');
   if (!root) return;
-  if (!detectWebGL2()) {
+  // `?nowebgl` previews the graceful-degradation screen on any device.
+  const forceFallback = new URLSearchParams(window.location.search).has('nowebgl');
+  if (forceFallback || !detectWebGL2()) {
     fallback(root, 'webgl');
     return;
   }

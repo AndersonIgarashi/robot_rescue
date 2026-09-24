@@ -7,6 +7,8 @@ import type { BindButton, ChoiceScreenView, ProgressSlotView } from '../types';
 import { Screen } from './Screen';
 
 const SWAP_DELAY_MS = 200;
+/** Cards ignore input while popping in, so a stray double-tap can't pick an option by accident. */
+const ENTRY_LOCK_MS = 550;
 const LONG_LABEL = 7;
 
 /** One reusable screen for every choice step; content is rebuilt from data per step. */
@@ -17,6 +19,7 @@ export class ChoiceScreen extends Screen {
   private cardElements: HTMLButtonElement[] = [];
   private unbinders: Array<() => void> = [];
   private swapTimer = 0;
+  private unlockTimer = 0;
 
   constructor(
     private readonly bindButton: BindButton,
@@ -37,6 +40,7 @@ export class ChoiceScreen extends Screen {
   /** Renders a step. When already visible, cards animate out and the new set pops in. */
   render(view: ChoiceScreenView): void {
     window.clearTimeout(this.swapTimer);
+    window.clearTimeout(this.unlockTimer);
     this.tracker.update(view.progress);
 
     if (!this.isActive) {
@@ -52,6 +56,7 @@ export class ChoiceScreen extends Screen {
   }
 
   markSelected(optionId: string, progress: readonly ProgressSlotView[]): void {
+    window.clearTimeout(this.unlockTimer);
     this.tracker.update(progress);
     this.cards.classList.add('is-locked');
     for (const card of this.cardElements) {
@@ -68,8 +73,10 @@ export class ChoiceScreen extends Screen {
     this.unbinders = [];
     this.cardElements = view.options.map((option, index) => this.createCard(view.stepId, option, index));
     this.cards.replaceChildren(...this.cardElements);
-    this.cards.classList.remove('is-out', 'is-locked');
+    this.cards.classList.remove('is-out');
+    this.cards.classList.add('is-locked');
     replayClass(this.cards, 'is-in');
+    this.unlockTimer = window.setTimeout(() => this.cards.classList.remove('is-locked'), ENTRY_LOCK_MS);
   }
 
   private createCard(stepId: SelectionKey, option: OptionDef, index: number): HTMLButtonElement {

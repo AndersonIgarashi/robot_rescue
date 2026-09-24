@@ -285,6 +285,20 @@
   scale: 1;
 }
 
+.card::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--u) * -1);
+  border-radius: inherit;
+  border: calc(var(--u) * 1) solid var(--c-white);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card.is-selected::after {
+  animation: card-burst 0.55s var(--ease-out);
+}
+
 .card.is-selected .card__icon {
   animation: wiggle 0.5s var(--ease-out);
 }
@@ -759,6 +773,17 @@
   to {
     opacity: 0;
     transform: translateY(30%) scale(0.7);
+  }
+}
+
+@keyframes card-burst {
+  from {
+    opacity: 0.9;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 1.35;
   }
 }
 

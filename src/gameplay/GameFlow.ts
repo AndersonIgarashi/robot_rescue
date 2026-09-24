@@ -41,6 +41,8 @@ type FlowState = 'intro' | 'choice' | 'building' | 'reveal';
 
 const ASSEMBLY_CLANK: Partial<Record<BuildStage, number>> = { legs: 0, body: 1, arms: 2, head: 3 };
 const REVEAL_CHEER_INTERVAL = 3.4;
+const INTRO_WAVE_INTERVAL = 3.2;
+const INTRO_FIRST_WAVE = 0.6;
 const REVEAL_HINT_DELAY = 3.2;
 
 const center = new Vector3();
@@ -63,6 +65,7 @@ export class GameFlow {
   private hintDelay = 0;
   private hintCountdown = -1;
   private revealTimer = 0;
+  private waveTimer = 0;
   private startedAt = 0;
   private plays = 0;
   private result: AICharacterResult | null = null;
@@ -97,6 +100,7 @@ export class GameFlow {
     camera.setSubject(getBodyType(choices.config.bodyType).bounds);
     camera.setShot('intro');
     ui.showIntro();
+    this.waveTimer = INTRO_FIRST_WAVE;
     this.armHint(this.ctx.config.hintDelayIntro);
   }
 
@@ -104,6 +108,13 @@ export class GameFlow {
     if (this.hintCountdown > 0) {
       this.hintCountdown -= dt;
       if (this.hintCountdown <= 0) this.ctx.ui.showHint();
+    }
+    if (this.state === 'intro') {
+      this.waveTimer -= dt;
+      if (this.waveTimer <= 0) {
+        this.waveTimer = INTRO_WAVE_INTERVAL;
+        this.ctx.character.wave();
+      }
     }
     if (this.state === 'reveal') {
       this.revealTimer -= dt;
