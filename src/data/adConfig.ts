@@ -10,8 +10,8 @@ export interface AdConfig {
   storeUrl: string;
   /** Seconds between a choice and the next step (lets the reaction play). */
   autoAdvanceDelay: number;
-  /** Idle seconds before the tutorial hand appears. */
-  hintDelayIntro: number;
+  /** Idle seconds before the tutorial hand appears (first question / later ones). */
+  hintDelayFirst: number;
   hintDelayChoice: number;
   aiProvider: 'mock' | 'remote';
   aiEndpoint: string;
@@ -26,7 +26,7 @@ const DEFAULTS: AdConfig = {
   ctaFollowUpLabel: 'PLAY NOW',
   storeUrl: 'https://example.com/store/build-your-ai',
   autoAdvanceDelay: 0.85,
-  hintDelayIntro: 1.2,
+  hintDelayFirst: 1.2,
   hintDelayChoice: 2.4,
   aiProvider: 'mock',
   aiEndpoint: '/api/generate-character',

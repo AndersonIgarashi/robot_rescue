@@ -3,7 +3,6 @@ import type { CardStyle, IconId, OptionDef, StatBlock } from '../data/types';
 
 /** Everything the UI can tell the game. The UI never mutates game state itself. */
 export interface UIEvents {
-  start: undefined;
   select: { stepId: SelectionKey; optionId: string; index: number };
   cta: undefined;
   replay: undefined;

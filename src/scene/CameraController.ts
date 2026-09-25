@@ -17,8 +17,7 @@ export interface ScreenRect {
 
 /** Minimum framed width: the pedestal must always be fully visible. */
 const STAGE_WIDTH = 2.4;
-export const CAMERA_FOV = 30;
-const FOV = CAMERA_FOV;
+const DEFAULT_FOV = 30;
 const tmp = new Vector3();
 
 /**
@@ -28,14 +27,15 @@ const tmp = new Vector3();
  * the 3D never fights the UI on any aspect ratio.
  */
 export class CameraController {
-  readonly camera = new PerspectiveCamera(FOV, 1, 0.1, 60);
+  readonly camera = new PerspectiveCamera(DEFAULT_FOV, 1, 0.5, 1200);
 
-  private shot: CameraShot = CAMERA_SHOTS.intro;
+  private shot: CameraShot = CAMERA_SHOTS.choice;
   private subject: SubjectBounds = { bottom: -0.62, top: 2.42, width: 1.6 };
   private viewport = { width: 1, height: 1 };
   private slot: ScreenRect = { x: 0, y: 0, width: 1, height: 1 };
 
   private distance = 10;
+  private fovValue = DEFAULT_FOV;
   private pitch = 8;
   private yaw = 0;
   private focusY = 1;
@@ -50,6 +50,11 @@ export class CameraController {
   private zoomPunch = 0;
   private pointerX = 0;
   private pointerY = 0;
+
+  /** Current (eased) vertical field of view in degrees. */
+  get fov(): number {
+    return this.fovValue;
+  }
 
   setShot(id: CameraShotId): void {
     this.shot = CAMERA_SHOTS[id];
@@ -92,6 +97,7 @@ export class CameraController {
 
   /** Jump straight to the target framing (first frame / resize before start). */
   snap(): void {
+    this.fovValue = this.shot.fov ?? DEFAULT_FOV;
     const target = this.computeTarget();
     this.distance = target.distance;
     this.focusY = target.focusY;
@@ -107,15 +113,17 @@ export class CameraController {
 
   update(dt: number): void {
     this.time += dt;
-    const target = this.computeTarget();
     const lambda = 4.5;
+    this.fovValue = damp(this.fovValue, this.shot.fov ?? DEFAULT_FOV, lambda, dt);
+    const target = this.computeTarget();
     this.distance = damp(this.distance, target.distance, lambda, dt);
     this.focusY = damp(this.focusY, target.focusY, lambda, dt);
     this.offsetX = damp(this.offsetX, target.offsetX, lambda * 1.4, dt);
     this.offsetY = damp(this.offsetY, target.offsetY, lambda * 1.4, dt);
     this.pitch = damp(this.pitch, this.shot.pitch, 3, dt);
     this.yaw = damp(this.yaw, this.shot.yaw, 3, dt);
-    this.lookAhead = damp(this.lookAhead, this.shot.lookAhead ?? 0, 3, dt);
+    // Faster than the orbit: the chase shot looks far down the road, the freeze shot right at the racer.
+    this.lookAhead = damp(this.lookAhead, this.shot.lookAhead ?? 0, 5, dt);
     this.anchor.x = damp(this.anchor.x, this.anchorTarget.x, 10, dt);
     this.anchor.z = damp(this.anchor.z, this.anchorTarget.z, 14, dt);
     this.trauma = Math.max(0, this.trauma - dt * 1.6);
@@ -135,16 +143,29 @@ export class CameraController {
     const slot = this.slot;
     const height = this.subject.top - this.subject.bottom;
     const width = Math.max(this.subject.width, this.shot.minWidth ?? STAGE_WIDTH);
-    const tanHalf = Math.tan((FOV * DEG2RAD) / 2);
+    const tanHalf = Math.tan((this.fovValue * DEG2RAD) / 2);
     const fill = this.shot.fill;
     const byHeight = (height * H) / (2 * tanHalf * fill * slot.height);
     const byWidth = (width * H) / (2 * tanHalf * fill * slot.width);
-    return {
-      distance: Math.max(byHeight, byWidth, this.shot.minDistance ?? 0) * (1 - this.zoomPunch),
-      focusY: this.subject.bottom + height * this.shot.focus,
-      offsetX: slot.x + slot.width / 2 - W / 2,
-      offsetY: slot.y + slot.height / 2 - H / 2,
-    };
+    const distance = Math.max(byHeight, byWidth, this.shot.minDistance ?? 0) * (1 - this.zoomPunch);
+    const focusY = this.subject.bottom + height * this.shot.focus;
+    let offsetY = slot.y + slot.height / 2 - H / 2;
+    if (this.shot.groundMax !== undefined) {
+      // Shots that look down the road sit the subject low: lift the frame if its feet would leave the slot.
+      const limit = slot.y + slot.height * this.shot.groundMax - H / 2;
+      offsetY = Math.min(offsetY, limit - this.groundBelowCenter(distance, focusY, tanHalf, H));
+    }
+    return { distance, focusY, offsetX: slot.x + slot.width / 2 - W / 2, offsetY };
+  }
+
+  /** Pixels between the projection centre and the anchor's ground point (y = 0), for the target pose. */
+  private groundBelowCenter(distance: number, focusY: number, tanHalf: number, H: number): number {
+    const pitch = this.shot.pitch * DEG2RAD;
+    const up = Math.sin(pitch) * distance;
+    const back = Math.cos(pitch) * distance;
+    const axis = Math.atan2(up, back + (this.shot.lookAhead ?? 0));
+    const ground = Math.atan2(focusY + up, back);
+    return (Math.tan(ground - axis) / tanHalf) * (H / 2);
   }
 
   private apply(): void {
@@ -152,6 +173,7 @@ export class CameraController {
     const yaw = (this.yaw + this.pointerX * 4) * DEG2RAD;
     const d = this.distance;
     const camera = this.camera;
+    camera.fov = this.fovValue;
     const { x: ax, z: az } = this.anchor;
     camera.position.set(
       ax + Math.sin(yaw) * Math.cos(pitch) * d,

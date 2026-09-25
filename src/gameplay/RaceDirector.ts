@@ -11,7 +11,8 @@ import type { RaceTrack } from '../race/RaceTrack';
 import type { Backdrop } from '../scene/Backdrop';
 import type { CameraController } from '../scene/CameraController';
 import type { Stage } from '../scene/Stage';
-import { damp } from '../utils/math';
+import { Easing } from '../utils/easing';
+import { clamp, damp } from '../utils/math';
 
 export type CountdownBeat = 3 | 2 | 1 | 'GO';
 
@@ -20,8 +21,14 @@ export interface RaceHooks {
   onCliffhanger(): void;
 }
 
+/** Scene-wide look (lights, fog): 0 = studio, 1 = neon dusk. */
+export interface Atmosphere {
+  setMood(amount: number): void;
+}
+
 export interface RaceDeps {
   track: RaceTrack;
+  atmosphere: Atmosphere;
   character: CharacterController;
   assembler: CharacterAssembler;
   camera: CameraController;
@@ -39,6 +46,7 @@ const ACCELERATION = 14;
 const FROZEN_TIME_SCALE = 0.05;
 /** The runner never reaches the hazard it freezes in front of. */
 const FREEZE_STOP_MARGIN = 0.9;
+const MAX_LEAN = 0.32;
 const tmp = new Vector3();
 
 /**
@@ -59,6 +67,7 @@ export class RaceDirector {
   private idleTimer = 0;
   private idleBeat = 0;
   private readonly dust = new EmitterState();
+  private readonly mood = { amount: 0 };
 
   constructor(private readonly deps: RaceDeps) {}
 
@@ -70,11 +79,12 @@ export class RaceDirector {
     return this.phase === 'running' || this.phase === 'frozen';
   }
 
-  /** Swaps the pedestal for the race track and puts the racer on the start line. */
-  enter(power: PowerDef): void {
-    const { track, stage, backdrop, tweener, camera, character } = this.deps;
+  /** Swaps the pedestal for the highway to the neon city and puts the racer on the start line. */
+  enter(power: PowerDef, racerName: string): void {
+    const { track, stage, backdrop, tweener, camera, character, assembler } = this.deps;
     track.prepare(power);
-    track.show();
+    track.show(racerName, assembler.materials.energyColor);
+    this.setMood(1, 0.7);
     stage.setVisible(false, tweener);
     backdrop.setVisible(false, tweener);
     this.lane = RACE_LAYOUT.demoRun.startLane;
@@ -129,11 +139,23 @@ export class RaceDirector {
     this.timeScaleValue = 1;
     this.hooks = null;
     track.hide();
+    this.setMood(0, 0);
     stage.setVisible(true, tweener, false);
     backdrop.setVisible(true, tweener);
     assembler.root.position.set(0, 0, 0);
     assembler.root.rotation.set(0, 0, 0);
     camera.setAnchor(0, 0, true);
+  }
+
+  private setMood(amount: number, duration: number): void {
+    const { tweener, atmosphere } = this.deps;
+    tweener.killTweensOf(this.mood);
+    if (duration <= 0) {
+      this.mood.amount = amount;
+      atmosphere.setMood(amount);
+      return;
+    }
+    tweener.to(this.mood, { amount }, { duration, ease: Easing.outQuad, onUpdate: () => atmosphere.setMood(this.mood.amount) });
   }
 
   /** On the start line the racer stays alive: glances back at the track, bounces, revs. */
@@ -163,7 +185,8 @@ export class RaceDirector {
     this.x = damp(this.x, laneX, 11, dt);
     this.placeRunner(this.x, this.z);
     // Lean into lane changes.
-    assembler.root.rotation.z = dt > 0 ? damp(assembler.root.rotation.z, (previousX - this.x) / dt * 0.05, 12, dt) : 0;
+    const lean = dt > 0 ? clamp(((previousX - this.x) / dt) * 0.05, -MAX_LEAN, MAX_LEAN) : 0;
+    assembler.root.rotation.z = damp(assembler.root.rotation.z, lean, 12, dt);
     camera.setAnchor(this.x * 0.5, this.z);
 
     const kind = track.collectNear(this.x, this.z);

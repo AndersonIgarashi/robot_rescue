@@ -39,11 +39,12 @@ export interface GameContext {
   config: AdConfig;
 }
 
-type FlowState = 'intro' | 'choice' | 'building' | 'reveal' | 'race' | 'launched';
+type FlowState = 'choice' | 'building' | 'reveal' | 'race' | 'launched';
 
 const ASSEMBLY_CLANK: Partial<Record<BuildStage, number>> = { legs: 0, body: 1, arms: 2, head: 3 };
-const INTRO_WAVE_INTERVAL = 3.2;
-const INTRO_FIRST_WAVE = 0.6;
+/** While the first question waits for its answer, the robot waves to draw the eye. */
+const ATTRACT_WAVE_INTERVAL = 3.2;
+const ATTRACT_FIRST_WAVE = 0.6;
 /** How long the "YOUR AI IS READY!" beat holds before the race set rolls in. */
 const REVEAL_HOLD = 2.6;
 const RACE_HINT_DELAY = 2.2;
@@ -54,13 +55,14 @@ const ground = new Vector3();
 const tmp = new Vector3();
 
 /**
- * The playable's state machine: INTRO -> CHOICES (data-driven steps) ->
- * BUILD -> REVEAL -> RACE (end card, CTA) -> teaser run -> cliffhanger.
+ * The playable's state machine: CHOICES (data-driven steps, the first one is
+ * on screen at load) -> BUILD -> REVEAL -> RACE (end card, CTA) -> teaser run
+ * -> cliffhanger.
  * It translates UI intent into ChoiceManager updates and orchestrates the
  * feedback (character, FX, camera, audio, analytics) — but owns none of those systems.
  */
 export class GameFlow {
-  private state: FlowState = 'intro';
+  private state: FlowState = 'choice';
   private stepIndex = 0;
   private busy = false;
   private sequence: Sequence | null = null;
@@ -75,7 +77,6 @@ export class GameFlow {
 
   constructor(private readonly ctx: GameContext) {
     const { ui, input, audio, character } = ctx;
-    ui.events.on('start', () => this.handleStart());
     ui.events.on('select', ({ stepId, optionId, index }) => this.handleSelect(stepId, optionId, index));
     ui.events.on('cta', () => this.handleCta());
     ui.events.on('replay', () => this.handleReplay());
@@ -95,16 +96,15 @@ export class GameFlow {
     return this.ctx.choices.steps;
   }
 
+  /** No title screen: the first question is the first thing the player sees. */
   start(): void {
-    const { ui, audio, camera, choices } = this.ctx;
-    this.state = 'intro';
+    const { ui, audio, camera, choices, config } = this.ctx;
     ui.setMuted(audio.muted);
     ui.setTheme(DEFAULT_THEME, choices.config.color.energy);
     camera.setSubject(getBodyType(choices.config.bodyType).bounds);
-    camera.setShot('intro');
-    ui.showIntro();
-    this.waveTimer = INTRO_FIRST_WAVE;
-    this.armHint(this.ctx.config.hintDelayIntro);
+    this.startedAt = performance.now();
+    this.goToStep(0);
+    this.armHint(config.hintDelayFirst);
   }
 
   update(dt: number): void {
@@ -112,27 +112,16 @@ export class GameFlow {
       this.hintCountdown -= dt;
       if (this.hintCountdown <= 0) this.ctx.ui.showHint();
     }
-    if (this.state === 'intro') {
+    if (this.state === 'choice' && this.stepIndex === 0 && !this.busy) {
       this.waveTimer -= dt;
       if (this.waveTimer <= 0) {
-        this.waveTimer = INTRO_WAVE_INTERVAL;
+        this.waveTimer = ATTRACT_WAVE_INTERVAL;
         this.ctx.character.wave();
       }
     }
   }
 
   // --- Input handlers -------------------------------------------------------
-
-  private handleStart(): void {
-    if (this.state !== 'intro' || this.busy) return;
-    const { analytics, audio, ui, character } = this.ctx;
-    analytics.track('START_CLICKED');
-    audio.play('whoosh');
-    ui.flash();
-    this.startedAt = performance.now();
-    character.react('select');
-    this.goToStep(0);
-  }
 
   private handleSelect(stepId: SelectionKey, optionId: string, index: number): void {
     if (this.state !== 'choice' || this.busy) return;
@@ -238,6 +227,7 @@ export class GameFlow {
     this.state = 'choice';
     this.stepIndex = index;
     this.busy = false;
+    if (index === 0) this.waveTimer = ATTRACT_FIRST_WAVE;
     ui.showChoice({ stepId: step.id, title: step.title, options: step.options, progress: this.progress(index) });
     camera.setShot('choice');
     this.armHint(config.hintDelayChoice);
@@ -299,7 +289,7 @@ export class GameFlow {
 
     this.state = 'race';
     this.busy = false;
-    race.enter(power);
+    race.enter(power, result.name);
     ui.showRace({
       name: result.name,
       hazardLabel: power.hazard.label,

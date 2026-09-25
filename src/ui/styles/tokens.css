@@ -35,8 +35,6 @@
   /* Typography */
   --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --fs-logo: calc(var(--u) * 16.5);
-  --fs-logo-small: calc(var(--u) * 10);
   --fs-h2: calc(var(--u) * 7.4);
   --fs-btn: calc(var(--u) * 8.4);
   --fs-card: calc(var(--u) * 5.2);

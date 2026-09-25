@@ -9,13 +9,12 @@ import { HandHint } from './HandHint';
 import { UI_ICONS } from './icons';
 import { BuildScreen } from './screens/BuildScreen';
 import { ChoiceScreen } from './screens/ChoiceScreen';
-import { IntroScreen } from './screens/IntroScreen';
 import { RaceScreen } from './screens/RaceScreen';
 import { RevealScreen } from './screens/RevealScreen';
 import type { Screen } from './screens/Screen';
 import type { BindButton, ChoiceScreenView, ProgressSlotView, RaceView, RevealView, UIEvents } from './types';
 
-export type SceneName = 'intro' | 'choice' | 'build' | 'reveal' | 'race';
+export type SceneName = 'choice' | 'build' | 'reveal' | 'race';
 
 /**
  * DOM game UI. Renders view models, reports intent through `events`, and
@@ -29,7 +28,6 @@ export class UIManager {
   onLayoutChange: (() => void) | null = null;
 
   private readonly background: HTMLElement;
-  private readonly intro: IntroScreen;
   private readonly choice: ChoiceScreen;
   private readonly build: BuildScreen;
   private readonly reveal: RevealScreen;
@@ -58,7 +56,6 @@ export class UIManager {
     this.root = el('div', 'ui');
 
     const bind: BindButton = (element, onClick, options) => this.bindButton(element, onClick, options?.tapSound ?? true);
-    this.intro = new IntroScreen(bind, () => this.events.emit('start', undefined));
     this.choice = new ChoiceScreen(bind, (stepId, optionId, index) => this.events.emit('select', { stepId, optionId, index }));
     this.build = new BuildScreen(tweener);
     this.reveal = new RevealScreen();
@@ -80,7 +77,6 @@ export class UIManager {
 
     this.root.append(
       this.vignette,
-      this.intro.root,
       this.choice.root,
       this.build.root,
       this.reveal.root,
@@ -98,10 +94,6 @@ export class UIManager {
   /** Current stage-slot rectangle in CSS pixels. */
   get stage(): ScreenRect {
     return this.stageRect;
-  }
-
-  showIntro(): void {
-    this.switchTo(this.intro, 'intro');
   }
 
   showChoice(view: ChoiceScreenView): void {

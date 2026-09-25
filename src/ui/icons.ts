@@ -23,10 +23,5 @@ export const UI_ICONS = {
   soundOn: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
   soundOff: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
   replay: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M19.5 4v5h-5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  hand: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 37V11a6 6 0 0 1 12 0v16a6 6 0 0 1 11 2.5 6 6 0 0 1 10 3.5v10c0 11-8 18-19 18h-4c-7 0-12-4-16-10l-8-12a5 5 0 0 1 8-6z" fill="#fff" stroke="#1d1646" stroke-width="3" stroke-linejoin="round"/><path d="M34 27v8M45 30v6" stroke="#1d1646" stroke-width="3" stroke-linecap="round"/></svg>`,
   play: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a1 1 0 0 0 1.53.85l10.5-6.8a1 1 0 0 0 0-1.7L9.53 4.35A1 1 0 0 0 8 5.2z" fill="#fff"/></svg>`,
-  sparkle: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1c1 6 5 10 11 11-6 1-10 5-11 11-1-6-5-10-11-11 6-1 10-5 11-11z" fill="currentColor"/></svg>`,
 } as const;
-
-/** Hand SVG fingertip, as a fraction of the icon box (for aiming the tutorial hand). */
-export const HAND_HOTSPOT = { x: 28 / 64, y: 6 / 64 } as const;

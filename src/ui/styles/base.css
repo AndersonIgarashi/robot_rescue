@@ -86,7 +86,6 @@ button {
   will-change: transform;
 }
 
-#app[data-scene='intro'] .bg__rays,
 #app[data-scene='reveal'] .bg__rays {
   opacity: 1;
 }

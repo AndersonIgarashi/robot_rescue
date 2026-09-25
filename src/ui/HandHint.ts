@@ -1,5 +1,8 @@
-import { el, fromMarkup } from '../utils/dom';
-import { HAND_HOTSPOT, UI_ICONS } from './icons';
+import handUrl from '../assets/images/hand-tutorial.webp';
+import { el } from '../utils/dom';
+
+/** Fingertip position inside the hand image (fractions of its box). */
+const HAND_HOTSPOT = { x: 16 / 128, y: 5 / 128 } as const;
 
 /** The classic playable-ad tutorial hand, aimed at whatever the player should tap next. */
 export class HandHint {
@@ -7,8 +10,8 @@ export class HandHint {
   private target: HTMLElement | null = null;
 
   constructor() {
-    this.root = el('div', 'hand', { 'aria-hidden': 'true' }, [el('span', 'hand__ripple')]);
-    this.root.append(fromMarkup(UI_ICONS.hand));
+    const image = el('img', 'hand__img', { src: handUrl, alt: '', draggable: 'false', decoding: 'async' });
+    this.root = el('div', 'hand', { 'aria-hidden': 'true' }, [el('span', 'hand__ripple'), image]);
   }
 
   get visible(): boolean {

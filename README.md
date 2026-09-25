@@ -1,12 +1,12 @@
 # Build Your AI
 
-A mobile-first **HTML5 playable ad** for a runner game. In about 20–40 seconds the player builds an AI racer in three quick choices and watches it assemble in 3D. The racer is then lined up on a 3-lane track whose obstacles depend on those choices. The **RUN!** call to action sends the player to the store to race it.
+A mobile-first **HTML5 playable ad** for a runner game. In about 20–40 seconds the player builds an AI racer in three quick choices and watches it assemble in 3D. The racer is then lined up on a 3-lane highway that runs to a neon city on the horizon, with obstacles that depend on those choices. The **RUN!** call to action sends the player to the store to race it.
 
-The engine is **TypeScript + Three.js** on a hand-written game layer. There is no game engine, no UI framework and no asset download: every character, track, sound and effect is generated at runtime. The production build is one self-contained HTML file.
+The engine is **TypeScript + Three.js** on a hand-written game layer. There is no game engine, no UI framework and no asset download: every character, track, building, sound and effect is generated at runtime. The one bitmap is the tutorial hand (a 5 KB WebP inlined in the build). The production build is one self-contained HTML file.
 
 <p align="center">
-  <img src="docs/intro.webp" width="200" alt="Intro screen" />
   <img src="docs/choose-gadget.webp" width="200" alt="Choosing a gadget" />
+  <img src="docs/building.webp" width="200" alt="Build sequence" />
   <img src="docs/race-frost.webp" width="200" alt="Race start line end card" />
   <img src="docs/cliffhanger-zapper.webp" width="200" alt="Bullet-time cliffhanger" />
 </p>
@@ -32,15 +32,14 @@ Press **D** (or tap the `DEV` pill) to open live render stats and the analytics 
 ## Gameplay
 
 ```
-INTRO ─▶ GADGET ─▶ POWER ─▶ BODY ─▶ BUILD ─▶ READY! ─▶ START LINE (RUN!) ─▶ teaser run ─▶ cliffhanger (PLAY NOW)
+GADGET ─▶ POWER ─▶ BODY ─▶ BUILD ─▶ READY! ─▶ START LINE (RUN!) ─▶ teaser run ─▶ cliffhanger (PLAY NOW)
 ```
 
-1. **Intro.** A robot on a pedestal waves at the player under the line "Build it. Race it!". **START** is the only action, and a tutorial hand appears after 1.2 s of idling.
-2. **Three choices.** Each choice changes the character immediately and matters in the race (see the table below).
-3. **Build.** The parts explode outward, a scanner sweeps the body, the parts snap back one by one, the eyes power on and the racer jumps into a hero pose. The AI request runs during this animation, so its latency is hidden.
-4. **Ready!** A short beat with the generated name (`FROST`, `VOLT`, `COMET`…) and a tagline.
-5. **Start line (the end card).** The pedestal drops away and a 3-lane track unrolls behind the racer. The racer waits on the start line, glancing back at the obstacles its power is weak to: **"DODGE THE FIRE!"**. A racer card shows the build as chips and stats, with a big **RUN!** CTA.
-6. **RUN!** opens the store. Behind it, the start lights count 3-2-1-GO, and the racer turns, sprints, switches lanes around a hazard and grabs pickups. Then the scene drops into **bullet time** in front of the next hazard, in a side-on shot, with "KEEP RACING IN THE APP!" and a **PLAY NOW** CTA.
+1. **Three choices, from the first frame.** There is no title screen: the gadget question is on screen at load. The robot waves, the option cards squash and stretch one after the other, and a tutorial hand appears after 1.2 s of idling. Each choice changes the character immediately and matters in the race (see the table below).
+2. **Build.** The parts explode outward, a scanner sweeps the body, the parts snap back one by one, the eyes power on and the racer jumps into a hero pose. The AI request runs during this animation, so its latency is hidden.
+3. **Ready!** A short beat with the generated name (`FROST`, `VOLT`, `COMET`…) and a tagline.
+4. **Start line (the end card).** The pedestal drops away, dusk falls and an elevated 3-lane highway unrolls to the horizon, while a cyberpunk city rises out of the ground and lights up: neon signs, drones, flying traffic, searchlights and a giant hologram cheering **"GO FROST!"**. The racer waits on the start line, glancing back at the obstacles its power is weak to: **"DODGE THE FIRE!"**. A racer card shows the build as chips and stats, with a big **RUN!** CTA.
+5. **RUN!** opens the store. Behind it, the start lights count 3-2-1-GO, and the racer turns, sprints, switches lanes around a hazard and grabs pickups. Then the scene drops into **bullet time** in front of the next hazard, in a side-on shot, with "KEEP RACING IN THE APP!" and a **PLAY NOW** CTA.
 
 **PLAY AGAIN** resets all state in code: no page reload and no leaked objects.
 
@@ -75,12 +74,13 @@ Runtime dependencies: **`three` only.**
 
 - **Mobile-first playable ad:** a 9:16 portrait design that becomes a two-column layout on landscape and desktop
 - **Modular 3D character system:** 3 rigs, 4 face styles, 9 accessories and 6 power effects, combined through named sockets
-- **Runner end card:** a procedural 3-lane track, data-driven hazards and pickups per power, start lights, a scripted teaser run and a bullet-time cliffhanger. World time is slowed while the UI and camera keep real time
+- **Runner end card:** a procedural 3-lane highway, data-driven hazards and pickups per power, start lights, a scripted teaser run and a bullet-time cliffhanger. World time is slowed while the UI and camera keep real time
+- **Procedural neon city:** a seeded layout of about 300 buildings with shader-drawn windows and neon trim, signs from a runtime canvas atlas, a personalised hologram, drones, flying traffic, searchlights, a synthwave sky and a neon grid, all fading into the horizon fog
 - **AI-ready architecture:** a generator interface with a deterministic mock, a validated remote client, and a timeout/fallback decorator
 - **Data-driven configuration:** choices, hazards, the race layout, names, VFX presets, camera shots, build beats and ad knobs all live in `src/data`
 - **Analytics events:** the full funnel, including separate CTA placements (start line and cliffhanger), with pluggable sinks
 - **Touch and mouse input:** tap and click, hover states, drag to spin the character, keyboard activation
-- **Polish:** squash and stretch, blinking, gaze that follows the pointer, a run cycle, glances, a tutorial hand, screen shake, colour-tweened themes, synth SFX and haptics
+- **Polish:** squash and stretch (the character and the idle option cards), blinking, gaze that follows the pointer, a run cycle, glances, a tutorial hand, screen shake, colour-tweened themes, synth SFX and haptics
 - **Resilience:** a WebGL fallback screen, context-loss handling, audio that is optional and safe when it fails, and no unhandled rejections
 
 ## Architecture
@@ -94,7 +94,7 @@ flowchart TD
     AI -- "AICharacterResult<br/>(config + name + copy + tuning)" --> Assembler
     Assembler --> Scene["Three.js scene"]
     Flow -- "PowerDef (hazard, pickup)" --> Race[RaceDirector]
-    Race --> Track["RaceTrack (props by power)"] --> Scene
+    Race --> Track["RaceTrack (props by power)"] --> City["CyberCity (sky, grid, instanced city)"] --> Scene
     Race -- "world time scale" --> Scene
     Controller[CharacterController] -- "procedural animation" --> Scene
     Flow --> Controller & FX[FXManager] & Camera[CameraController] & Audio[AudioManager] & Analytics[AnalyticsManager]
@@ -106,16 +106,18 @@ The architecture follows these rules:
 - **`CharacterConfig` is the single source of truth.** `resolveCharacterConfig(selections)` is a pure function. The live preview and the AI generator both use it.
 - **`CharacterAssembler` diffs configs.** Paint changes are colour tweens on shared materials. Parts pop in and out. Rigs, faces and attachments are cached, so switching the body type or restarting never rebuilds geometry.
 - **Everything attaches through sockets** (`headTop`, `face`, `back`, `handR`, …) on the `BodyRig` interface. An arm cannon works on the robot, the android or the drone's rotor without special cases.
-- **The race is data.** `PowerDef.hazard` and `PowerDef.pickup` choose prop factories. `RACE_LAYOUT` places them and scripts the teaser run (lane changes by distance, the freeze point). `RaceDirector` owns the world time scale, so the slow motion affects the character, VFX and track but not the UI or the camera.
+- **The race is data.** `PowerDef.hazard` and `PowerDef.pickup` choose prop factories. `RACE_LAYOUT` places them and scripts the teaser run (lane changes by distance, the freeze point). `RaceDirector` owns the world time scale, so the slow motion affects the character, VFX, track and city but not the UI or the camera. It also drives the scene mood (studio light to neon dusk, fog in or out).
+- **Camera shots are data too.** Each shot in `cameraShots.ts` sets its lens: a flattering 30° for the choices, a wide 52–56° low angle for the race so the highway converges on the city, and a side-on shot for the freeze.
 - **`GameFlow` orchestrates but owns nothing.** It is a small state machine that turns UI intent into feedback.
 
 ```
 src/
   core/        GameApp (composition root + loop), Tweener, Sequence, EventBus, QualityManager
-  scene/       SceneManager, CameraController, Stage (pedestal), BlobShadow, Backdrop
+  scene/       SceneManager (lights, fog, mood), CameraController, Stage (pedestal), BlobShadow, Backdrop
   character/   CharacterConfig, CharacterAssembler, CharacterController, materials, geometry cache
     parts/     rigs, face, accessories, effects, BodyRig/Attachment contracts
-  race/        RaceTrack (track, start lights, finish), props (hazards + pickups)
+  race/        RaceTrack (highway, start lights, finish gate), props (hazards + pickups),
+               CyberCity + cityShaders + cityTextures (sky, grid, buildings, signs, hologram, drones, traffic)
   ai/          IAICharacterGenerator, Mock / Remote / Resilient generators, name resolver
   gameplay/    GameFlow, ChoiceManager, RaceDirector
   fx/          ParticleSystem (GPU points), LightningArcs, EnergyFX, presets
@@ -150,35 +152,38 @@ In practice, the endpoint behind `RemoteAICharacterGenerator` would prompt an LL
 
 ## Performance
 
-These figures come from `renderer.info` in the dev overlay at 390×844:
+These figures come from `renderer.info` at 390×844:
 
 | Metric | Value |
 | --- | --- |
-| Production build | **1 HTML file, 754 KB (205 KB gzip)**: JS, CSS and font inlined |
+| Production build | **1 HTML file, 788 KB (220 KB gzip)**: JS, CSS, font and tutorial hand inlined |
 | Network requests after load | **0** |
-| Draw calls | 44 (intro), about 100 (race with all props), 58 (bullet time) |
-| Triangles | about 17k (intro) to about 46k (race) |
-| Shader programs | 18 |
-| Textures | 6, all generated at runtime (canvas gradients, road and checker patterns, PMREM environment); none downloaded |
-| JS heap | about 22–24 MB |
+| Time to first interaction | about 1.7 s (production file, hardware GPU) |
+| Draw calls | 45 (choices), about 150 (race start line, city included), 75 (bullet time) |
+| Triangles | about 17k (choices) to about 92k (race) |
+| Shader programs | 27, all compiled during idle time after the first frame |
+| Textures | 9, all generated at runtime (canvas gradients, road markings, checkers, sign atlas, hologram, PMREM environment) |
+| JS heap | about 25–29 MB |
 
 Optimisation decisions:
 
-- **No textures or models to download.** Geometry is procedural, built from cached primitives shared through `mesh.scale` (about 50 geometries for everything, track included). Road lanes and checkers are small canvas textures drawn at boot.
+- **No textures or models to download.** Geometry is procedural, built from cached primitives shared through `mesh.scale` (about 60 geometries for everything, track and city included). Road markings, checkers and the neon signs are canvas textures drawn at runtime.
+- **An instanced city.** About 300 buildings are one instanced draw call. Windows, neon crowns and edge strips are computed in the fragment shader from world position, and far windows blend to their average instead of shimmering. The signs are one merged mesh over one canvas atlas, and drones and flying traffic are instanced too. The whole city costs about 12 draw calls.
+- **Fog that never recompiles.** The fog stays on the scene all the time and is pushed out of reach outside the race, so turning it on never changes a shader. City materials fog their body colour like the built-in materials (it melts into the sky at the horizon) but only partly fog their neon, which keeps glowing through the haze.
 - **Shared, role-based materials** (`primary`, `secondary`, `energy`, …). Changing the paint animates about 10 material colours instead of rebuilding meshes.
 - **Static meshes bake their matrices** (`matrixAutoUpdate = false`). Only joints, wrappers and animated props update.
 - **No shadow maps.** Blob shadows travel with the character. No post-processing, and very little transparency.
-- **The CSS background is transparent to WebGL.** The gradient, light rays and glow are CSS, so the GPU never fills a fullscreen quad for them.
+- **The CSS background is transparent to WebGL.** Outside the race, the gradient, light rays and glow are CSS, so the GPU never fills a fullscreen quad for them. The race sky is a dome drawn first in the opaque pass, alpha-blended so it can fade in over the CSS page.
 - **Pooled GPU particles.** There is one draw call per blend mode, struct-of-arrays typed buffers, swap-remove on death, partial buffer uploads (`addUpdateRange`), and zero per-frame allocations. Sprite shapes are drawn in the fragment shader.
 - **Lightning (and the magnetic zaps) is a single dynamic ribbon mesh** with a soft-core shader.
-- **Prewarm after first paint.** Every rig/attachment combination and every power's track props are built, and every shader compiled, during idle time. No choice or race start causes a hitch.
+- **Prewarm after first paint.** Every rig/attachment combination and every power's track props are built, every shader compiled and the sign atlas painted and uploaded (canvas glow is slow) during idle time. No choice or race start causes a hitch.
 - **Adaptive quality.** `QualityManager` watches frame time and steps down pixel ratio and particle density on struggling devices. The pixel ratio is capped at 2.
 - **Loop discipline.** A single `requestAnimationFrame` loop with dt clamping, paused when the tab is hidden or the WebGL context is lost. DOM writes are throttled, and layout is only read on resize or screen changes.
 - **Asset sizes.** The subset `woff2` font is 6 KB. SFX are synthesised with Web Audio, at 0 KB.
 
 ## Playable Ad Design
 
-- **Fast first interaction.** No intro cinematic and no loading screen. An inline boot splash is painted before any JS runs, and START is the only action. The tutorial hand appears after 1.2 s idle (2.4 s on choice screens, 2.2 s on RUN, 1.4 s on the cliffhanger CTA).
+- **Fast first interaction.** No title screen, no intro cinematic and no loading screen. An inline boot splash is painted before any JS runs, and the first question is the first screen. The tutorial hand appears after 1.2 s idle on the first question (2.4 s on the later ones, 2.2 s on RUN, 1.4 s on the cliffhanger CTA).
 - **Short loop.** 3 taps, then a 3 s build, a 2.6 s "ready" beat, then the end card. The whole thing takes about 20 s before the CTA. Every choice auto-advances after its reaction plays.
 - **Two CTA moments.** **RUN!** on the start line (curiosity) and **PLAY NOW** on the cliffhanger (tension). Both go through `AdBridge` (`mraid.open`, `ExitApi.exit`, or the demo toast) and are tracked with their placement.
 - **Mobile-first UX.** Thumb-zone cards, 40 px or larger hit targets, safe-area insets, a 9:16 layout unit (`--u`), a dedicated landscape layout, haptics, no 300 ms tap delay, and cards that ignore input while popping in (no accidental double-tap picks).
@@ -186,7 +191,7 @@ Optimisation decisions:
 
 ### Analytics
 
-`AnalyticsManager` tracks the funnel (`PLAYABLE_STARTED`, `START_CLICKED`, `GADGET_SELECTED`, `POWER_SELECTED`, `BODY_SELECTED`, `CHARACTER_GENERATED`, `PLAYABLE_COMPLETED` when the end card shows, `CTA_CLICKED` and `RESTARTED`) with a timestamp, session time, session id and metadata:
+`AnalyticsManager` tracks the funnel (`PLAYABLE_STARTED`, `GADGET_SELECTED`, `POWER_SELECTED`, `BODY_SELECTED`, `CHARACTER_GENERATED`, `PLAYABLE_COMPLETED` when the end card shows, `CTA_CLICKED` and `RESTARTED`) with a timestamp, session time, session id and metadata:
 
 ```json
 { "eventName": "CTA_CLICKED", "timestamp": 1790291842120, "sessionTime": 21480, "sessionId": "k3v9x2qa", "metadata": { "name": "FROST", "label": "RUN!", "placement": "start_line", "environment": "demo" } }
@@ -217,7 +222,7 @@ The flow was verified end-to-end with automated headless Chrome and Edge runs (p
 
 - Every hazard set (fire jets / water jets / magnets) from start line to cliffhanger, with the full analytics funnel, including both CTA placements
 - Three consecutive playthroughs using PLAY AGAIN
-- Rapid tapping on START and on the cards: exactly one selection per step
+- Rapid tapping on the cards: exactly one selection per step, and the idle squash stops cleanly on selection
 - Portrait phones, a tablet, a landscape phone and desktop layouts, with no UI overflow
 - The WebGL fallback screen, and the remote-AI failure falling back to the mock
 - The production `dist/index.html` opened from `file://` in Chrome and Edge, with zero external requests
@@ -226,4 +231,4 @@ The flow was verified end-to-end with automated headless Chrome and Edge runs (p
 ## Credits
 
 - Font: [Lilita One](https://fonts.google.com/specimen/Lilita+One) by Juan Montoreano, SIL Open Font License 1.1 (subset embedded).
-- Everything else (models, track, VFX, icons, sound) is procedural and original to this project.
+- Everything else (models, track, city, VFX, icons, sound) is procedural and original to this project, apart from the tutorial hand image supplied for it.

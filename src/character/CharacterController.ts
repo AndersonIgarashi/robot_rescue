@@ -90,7 +90,7 @@ export class CharacterController {
     this.squash.impulse(velocity * 0.55);
   }
 
-  /** Friendly "hi!" wave with the right arm — used to draw the eye on the intro. */
+  /** Friendly "hi!" wave with the right arm — used to draw the eye on the first question. */
   wave(duration = 1.3): void {
     this.waveTimer = duration;
     this.waveDuration = duration;

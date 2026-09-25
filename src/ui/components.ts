@@ -1,6 +1,6 @@
 import type { CardStyle, IconId } from '../data/types';
 import { el, fromMarkup } from '../utils/dom';
-import { CHOICE_ICONS, UI_ICONS } from './icons';
+import { CHOICE_ICONS } from './icons';
 import type { ProgressSlotView } from './types';
 
 export const icon = (markup: string, className = ''): HTMLElement => {
@@ -17,12 +17,6 @@ export function createCtaButton(label: string, extraClass = ''): { button: HTMLB
   const button = el('button', `btn btn--cta ${extraClass}`.trim(), { type: 'button' }, [el('span', 'btn__shine'), text]);
   return { button, label: text };
 }
-
-export const sparkle = (delay: number, variant: string): HTMLElement => {
-  const node = icon(UI_ICONS.sparkle, `sparkle sparkle--${variant}`);
-  node.style.setProperty('--d', String(delay));
-  return node;
-};
 
 export const cardStyleVars = (card: CardStyle): string =>
   `--card-top:${card.top};--card-bottom:${card.bottom};--card-edge:${card.edge}`;

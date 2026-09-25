@@ -15,7 +15,7 @@ import { InputManager } from '../input/InputManager';
 import { RaceTrack } from '../race/RaceTrack';
 import { Backdrop } from '../scene/Backdrop';
 import { BlobShadow, createRadialTexture } from '../scene/BlobShadow';
-import { CAMERA_FOV, CameraController } from '../scene/CameraController';
+import { CameraController } from '../scene/CameraController';
 import { SceneManager } from '../scene/SceneManager';
 import { Stage } from '../scene/Stage';
 import { DevPanel } from '../ui/DevPanel';
@@ -75,6 +75,7 @@ export class GameApp {
   private running = false;
   private contextLost = false;
   private resizeQueued = false;
+  private pointScaleFov = 0;
   private parallaxX = 0;
   private parallaxY = 0;
   private readonly focusWorld = new Vector3();
@@ -90,6 +91,7 @@ export class GameApp {
     this.raceTrack = new RaceTrack(this.assembler.geometry, this.tweener);
     this.race = new RaceDirector({
       track: this.raceTrack,
+      atmosphere: this.sceneManager,
       character: this.character,
       assembler: this.assembler,
       camera: this.camera,
@@ -197,10 +199,11 @@ export class GameApp {
     this.parallaxY = damp(this.parallaxY, pointer.active ? pointer.y : 0, 2.5, dt);
     this.camera.setPointer(this.parallaxX, this.parallaxY);
     this.camera.update(dt);
+    if (Math.abs(this.camera.fov - this.pointScaleFov) > 0.05) this.syncPointScale();
 
     this.fx.update(worldDt, this.camera.camera.position);
     const energy = this.assembler.materials.energyColor;
-    this.raceTrack.update(worldDt, this.fx, energy);
+    this.raceTrack.update(worldDt, this.fx, energy, this.camera.camera.position);
     const rig = this.assembler.rig;
     this.stage.update(this.elapsed, energy);
     this.shadow.update(rig.metrics.hover + rig.root.position.y);
@@ -222,7 +225,12 @@ export class GameApp {
       this.assembler.prewarm();
       const warmup = this.assembler.createShaderWarmup();
       withHiddenRevealed(this.fx.root, () => this.sceneManager.compile(warmup, this.camera.camera));
-      this.raceTrack.prewarm(POWERS, () => this.sceneManager.renderer.compile(this.sceneManager.scene, this.camera.camera));
+      const { renderer, scene } = this.sceneManager;
+      this.raceTrack.prewarm(
+        POWERS,
+        () => renderer.compile(scene, this.camera.camera),
+        (texture) => renderer.initTexture(texture),
+      );
     } catch (error) {
       console.warn('[app] prewarm skipped', error);
     }
@@ -232,8 +240,14 @@ export class GameApp {
     const width = this.root.clientWidth;
     const height = this.root.clientHeight;
     this.sceneManager.resize(width, height);
-    this.fx.setPointScale(this.sceneManager.bufferHeight / 2 / Math.tan((CAMERA_FOV * DEG2RAD) / 2));
+    this.syncPointScale();
     this.ui.refreshLayout();
+  }
+
+  /** Particle sizes are in world units: their pixel scale follows the buffer height and the lens. */
+  private syncPointScale(): void {
+    this.pointScaleFov = this.camera.fov;
+    this.fx.setPointScale(this.sceneManager.bufferHeight / 2 / Math.tan((this.pointScaleFov * DEG2RAD) / 2));
   }
 
   private updateViewport(): void {

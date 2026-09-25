@@ -1,6 +1,5 @@
 export type AnalyticsEventName =
   | 'PLAYABLE_STARTED'
-  | 'START_CLICKED'
   | 'GADGET_SELECTED'
   | 'POWER_SELECTED'
   | 'BODY_SELECTED'

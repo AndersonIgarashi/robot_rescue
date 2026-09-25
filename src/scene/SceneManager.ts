@@ -1,6 +1,7 @@
 import {
   Color,
   DirectionalLight,
+  Fog,
   HemisphereLight,
   NeutralToneMapping,
   PMREMGenerator,
@@ -11,9 +12,18 @@ import {
   type Object3D,
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { STAGE_COLORS } from '../data/theme';
+import { CITY_COLORS, CITY_FOG, STAGE_COLORS } from '../data/theme';
+import { lerp } from '../utils/math';
 
 const WHITE = new Color(0xffffff);
+/** Fog that never reaches anything: kept on the scene so shaders never recompile when it comes on. */
+const FOG_OFF = 1e5;
+
+const MOOD = {
+  hemiSky: [new Color(STAGE_COLORS.hemiSky), new Color(CITY_COLORS.hemiSky)],
+  hemiGround: [new Color(STAGE_COLORS.hemiGround), new Color(CITY_COLORS.hemiGround)],
+  key: [new Color(STAGE_COLORS.key), new Color(CITY_COLORS.key)],
+} as const;
 
 export interface SceneOptions {
   maxPixelRatio: number;
@@ -27,6 +37,9 @@ export class SceneManager {
   readonly renderer: WebGLRenderer;
   readonly scene = new Scene();
   readonly canvas: HTMLCanvasElement;
+  readonly fog = new Fog(CITY_COLORS.horizon, FOG_OFF, FOG_OFF + 1);
+  private readonly hemiLight: HemisphereLight;
+  private readonly keyLight: DirectionalLight;
   private readonly rimLight: DirectionalLight;
   private readonly bufferSize = new Vector2();
   private pixelRatio = 1;
@@ -48,11 +61,13 @@ export class SceneManager {
     this.canvas.setAttribute('aria-hidden', 'true');
     container.append(this.canvas);
 
-    this.scene.add(new HemisphereLight(STAGE_COLORS.hemiSky, STAGE_COLORS.hemiGround, 1.5));
+    this.scene.fog = this.fog;
+    this.hemiLight = new HemisphereLight(STAGE_COLORS.hemiSky, STAGE_COLORS.hemiGround, 1.5);
+    this.scene.add(this.hemiLight);
 
-    const key = new DirectionalLight(STAGE_COLORS.key, 2.3);
-    key.position.set(3, 6, 5);
-    this.scene.add(key);
+    this.keyLight = new DirectionalLight(STAGE_COLORS.key, 2.3);
+    this.keyLight.position.set(3, 6, 5);
+    this.scene.add(this.keyLight);
 
     const fill = new DirectionalLight(0xc4d6ff, 0.55);
     fill.position.set(-4, 2, 3);
@@ -75,6 +90,19 @@ export class SceneManager {
 
   add(...objects: Object3D[]): void {
     this.scene.add(...objects);
+  }
+
+  /**
+   * 0 = bright studio (choices, build), 1 = neon dusk (race): tints the lights
+   * and pulls the fog in so the highway fades into the horizon.
+   */
+  setMood(amount: number): void {
+    this.hemiLight.color.lerpColors(MOOD.hemiSky[0], MOOD.hemiSky[1], amount);
+    this.hemiLight.groundColor.lerpColors(MOOD.hemiGround[0], MOOD.hemiGround[1], amount);
+    this.keyLight.color.lerpColors(MOOD.key[0], MOOD.key[1], amount);
+    const on = amount > 0.001;
+    this.fog.near = on ? lerp(FOG_OFF, CITY_FOG.near, Math.sqrt(amount)) : FOG_OFF;
+    this.fog.far = on ? lerp(FOG_OFF, CITY_FOG.far, Math.sqrt(amount)) : FOG_OFF + 1;
   }
 
   /** Rim light follows the character's energy colour for a coloured silhouette edge. */
