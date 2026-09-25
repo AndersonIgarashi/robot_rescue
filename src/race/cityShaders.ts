@@ -65,6 +65,18 @@ float hash11(float p) {
 }
 `;
 
+/*
+ * Per-building / per-face constants feed the window and flicker hashes. They
+ * are `flat`: interpolation jitters a constant by ~1e-7 from pixel to pixel,
+ * and the hash amplifies that into striped, z-fighting-like panes.
+ */
+const BUILDING_FLAT_VARYINGS = /* glsl */ `
+flat varying vec3 vFaceNormal;
+flat varying vec3 vSize;
+flat varying vec3 vNeon;
+flat varying float vSeed;
+`;
+
 const color = (hex: number): Color => new Color(hex);
 
 /** Gradient dome with a striped synthwave sun and twinkling stars. Follows the camera. */
@@ -218,10 +230,7 @@ export function createBuildingMaterial(): ShaderMaterial {
       attribute float aSeed;
       ${RISE_VERTEX}
       varying vec3 vLocal;
-      varying vec3 vFaceNormal;
-      varying vec3 vSize;
-      varying vec3 vNeon;
-      varying float vSeed;
+      ${BUILDING_FLAT_VARYINGS}
       varying float vDepth;
       #include <fog_pars_vertex>
       void main() {
@@ -249,10 +258,7 @@ export function createBuildingMaterial(): ShaderMaterial {
       uniform float uLights;
       uniform float uTime;
       varying vec3 vLocal;
-      varying vec3 vFaceNormal;
-      varying vec3 vSize;
-      varying vec3 vNeon;
-      varying float vSeed;
+      ${BUILDING_FLAT_VARYINGS}
       varying float vDepth;
       ${FOG_FRAGMENT_HELPERS}
       ${HASH}
@@ -303,7 +309,7 @@ export function createSignMaterial(map: Texture): ShaderMaterial {
       attribute float aSeed;
       ${RISE_VERTEX}
       varying vec2 vUv;
-      varying float vSeed;
+      flat varying float vSeed;
       #include <fog_pars_vertex>
       void main() {
         vUv = uv;
@@ -320,7 +326,8 @@ export function createSignMaterial(map: Texture): ShaderMaterial {
       uniform float uOn;
       uniform float uTime;
       varying vec2 vUv;
-      varying float vSeed;
+      // Hashed for the broken-tube stutter: flat for the same reason as the buildings.
+      flat varying float vSeed;
       ${FOG_FRAGMENT_HELPERS}
       ${HASH}
       void main() {
