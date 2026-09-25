@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Build Your AI · Playable Ad</title>
+    <meta name="description" content="Playable ad demo: build an AI racer in three taps, watch it assemble in 3D, then line it up on a neon highway." />
+    <meta property="og:title" content="Build Your AI · Playable Ad" />
+    <meta property="og:description" content="Build an AI racer and race it through a neon city. TypeScript + Three.js playable ad, fully procedural." />
+    <meta name="theme-color" content="#2a1a78" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='14' width='48' height='40' rx='14' fill='%235a5cff'/%3E%3Crect x='15' y='22' width='34' height='22' rx='8' fill='%231b1f3b'/%3E%3Ccircle cx='25' cy='33' r='5' fill='%2345f0df'/%3E%3Ccircle cx='39' cy='33' r='5' fill='%2345f0df'/%3E%3Crect x='30' y='4' width='4' height='10' fill='%235a5cff'/%3E%3Ccircle cx='32' cy='5' r='4' fill='%2345f0df'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --ink: #1d1646;
+        --night: #1a1150;
+        --violet: #6a5cff;
+        --sky: #36c2ff;
+        --energy: #45f0df;
+        --pink: #ff4fd8;
+        --yellow: #ffd23f;
+        --cta-top: #8dff5e;
+        --cta-bottom: #1ec95a;
+        --cta-edge: #0e8a3b;
+        --lavender: #e2dcff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        font-family: 'Nunito', system-ui, sans-serif;
+        color: #fff;
+        background: radial-gradient(900px 520px at 50% 62%, rgba(255, 79, 216, 0.4), transparent 70%),
+          linear-gradient(180deg, #2a1a78 0%, #4b2fb8 38%, #8a3fd0 58%, var(--night) 58.2%, #120b3a 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Neon city skyline sitting on the horizon */
+      .skyline {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 42vh;
+        width: 100%;
+        height: 22vh;
+        z-index: -1;
+      }
+
+      /* Synthwave highway grid rolling toward the horizon */
+      .grid {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 42vh;
+        z-index: -1;
+        overflow: hidden;
+        perspective: 280px;
+        perspective-origin: 50% 0;
+      }
+
+      .grid::before {
+        content: '';
+        position: absolute;
+        left: -60%;
+        right: -60%;
+        top: 0;
+        height: 220%;
+        background-image: linear-gradient(rgba(69, 240, 223, 0.55) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(255, 79, 216, 0.5) 2px, transparent 2px);
+        background-size: 64px 64px;
+        transform: rotateX(64deg);
+        transform-origin: 50% 0;
+        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%);
+        mask-image: linear-gradient(180deg, transparent 0%, #000 30%);
+        animation: roll 1.6s linear infinite;
+      }
+
+      .shards span {
+        position: fixed;
+        z-index: -1;
+        width: var(--s);
+        height: var(--s);
+        background: var(--c);
+        opacity: 0.6;
+        clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+        filter: drop-shadow(0 0 10px var(--c));
+        animation: drift var(--d, 9s) ease-in-out infinite alternate;
+      }
+
+      main {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(32px, 6vw, 96px);
+        padding: 32px 24px;
+      }
+
+      .info {
+        position: relative;
+        max-width: 440px;
+        text-align: center;
+      }
+
+      /* Soft dusk behind the copy so the skyline and grid never fight the text */
+      .info::before {
+        content: '';
+        position: absolute;
+        inset: -60px -90px;
+        z-index: -1;
+        background: radial-gradient(closest-side, rgba(18, 11, 58, 0.72), rgba(18, 11, 58, 0.4) 60%, transparent);
+      }
+
+      .logo {
+        margin: 0;
+        animation: bob 3.2s ease-in-out infinite;
+      }
+
+      .logo svg {
+        width: 96px;
+        height: auto;
+        filter: drop-shadow(0 10px 18px rgba(10, 6, 40, 0.45));
+      }
+
+      .logo span {
+        display: block;
+        margin-top: 4px;
+        font-family: 'Lilita One', system-ui, sans-serif;
+        font-weight: 400;
+        font-size: clamp(40px, 4vw, 56px);
+        line-height: 1;
+        white-space: nowrap;
+        letter-spacing: 1px;
+        color: #fff;
+        -webkit-text-stroke: 8px var(--ink);
+        paint-order: stroke fill;
+        text-shadow: 0 6px 0 var(--ink), 0 0 28px rgba(69, 240, 223, 0.55);
+      }
+
+      .logo em {
+        font-style: normal;
+        color: var(--energy);
+      }
+
+      .info p {
+        font-size: 18px;
+        line-height: 1.5;
+        font-weight: 600;
+        color: var(--lavender);
+        margin: 18px 0 8px;
+      }
+
+      .tech {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin: 16px 0 26px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .tech li {
+        font-size: 13px;
+        font-weight: 800;
+        color: #fff;
+        background: rgba(24, 16, 72, 0.45);
+        border: 1px solid rgba(69, 240, 223, 0.45);
+        border-radius: 999px;
+        padding: 5px 12px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .btn {
+        font-family: 'Lilita One', system-ui, sans-serif;
+        font-size: 20px;
+        letter-spacing: 0.5px;
+        color: #fff;
+        text-decoration: none;
+        border: 0;
+        cursor: pointer;
+        padding: 12px 22px 14px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--cta-top), var(--cta-bottom));
+        box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.45), 0 6px 0 var(--cta-edge), 0 10px 18px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 2px 0 var(--cta-edge);
+        transition: transform 0.12s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px) scale(1.03);
+      }
+
+      .btn:active {
+        transform: translateY(3px) scale(0.97);
+      }
+
+      .btn.secondary {
+        background: linear-gradient(180deg, #7d70ff, #5443e0);
+        box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.3), 0 6px 0 #2e2296, 0 10px 18px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 2px 0 #2e2296;
+      }
+
+      .hint {
+        margin-top: 22px;
+        font-size: 14px;
+        opacity: 0.75;
+      }
+
+      .info .credit {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .credit a {
+        color: #fff;
+        font-weight: 800;
+        text-decoration: none;
+        border-bottom: 2px solid rgba(69, 240, 223, 0.7);
+      }
+
+      .credit a:hover {
+        border-bottom-color: #fff;
+      }
+
+      .phone {
+        position: relative;
+        flex: none;
+        height: min(88vh, 880px);
+        aspect-ratio: 9 / 19.5;
+        padding: 12px;
+        border-radius: 48px;
+        background: #100a30;
+        box-shadow: 0 0 0 2px #4a3aa8, 0 0 50px rgba(69, 240, 223, 0.3), 0 0 90px rgba(255, 79, 216, 0.25),
+          0 30px 60px rgba(8, 5, 24, 0.6);
+      }
+
+      .phone iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 36px;
+        background: #5a6bff;
+      }
+
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0) rotate(-1deg);
+        }
+        50% {
+          transform: translateY(-8px) rotate(1deg);
+        }
+      }
+
+      @keyframes drift {
+        from {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        to {
+          transform: translate(18px, -26px) rotate(35deg);
+        }
+      }
+
+      @keyframes roll {
+        to {
+          background-position: 0 64px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .logo,
+        .shards span,
+        .grid::before {
+          animation: none;
+        }
+      }
+
+      @media (max-width: 900px) and (min-width: 641px) {
+        main {
+          flex-direction: column;
+        }
+      }
+
+      /* On phones the playable takes the whole screen */
+      @media (max-width: 640px) {
+        .skyline,
+        .grid,
+        .shards,
+        .info {
+          display: none;
+        }
+
+        main {
+          padding: 0;
+        }
+
+        .phone {
+          position: fixed;
+          inset: 0;
+          height: 100dvh;
+          width: 100vw;
+          aspect-ratio: auto;
+          padding: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .phone iframe {
+          border-radius: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="skyline" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true">
+      <g fill="#1a1150">
+        <rect x="0" y="70" width="60" height="90" />
+        <rect x="55" y="40" width="44" height="120" />
+        <rect x="96" y="92" width="70" height="68" />
+        <rect x="160" y="22" width="38" height="138" />
+        <rect x="196" y="64" width="64" height="96" />
+        <rect x="256" y="100" width="54" height="60" />
+        <rect x="306" y="48" width="46" height="112" />
+        <rect x="350" y="80" width="80" height="80" />
+        <rect x="426" y="12" width="40" height="148" />
+        <rect x="462" y="58" width="58" height="102" />
+        <rect x="518" y="96" width="70" height="64" />
+        <rect x="584" y="30" width="50" height="130" />
+        <rect x="630" y="74" width="66" height="86" />
+        <rect x="692" y="44" width="42" height="116" />
+        <rect x="730" y="104" width="76" height="56" />
+        <rect x="800" y="18" width="46" height="142" />
+        <rect x="842" y="66" width="60" height="94" />
+        <rect x="898" y="90" width="72" height="70" />
+        <rect x="966" y="36" width="44" height="124" />
+        <rect x="1006" y="76" width="68" height="84" />
+        <rect x="1070" y="50" width="48" height="110" />
+        <rect x="1114" y="96" width="86" height="64" />
+      </g>
+      <g fill="none" stroke-width="2.5">
+        <path d="M160 22h38M426 12h40M800 18h46" stroke="#45f0df" />
+        <path d="M55 40h44M584 30h50M966 36h44" stroke="#ff4fd8" />
+        <path d="M306 48h46M692 44h42M1070 50h48" stroke="#ffd23f" />
+      </g>
+    </svg>
+    <div class="grid" aria-hidden="true"></div>
+    <div class="shards" aria-hidden="true">
+      <span style="--c: var(--energy); --s: 22px; top: 12%; left: 6%; --d: 8s"></span>
+      <span style="--c: var(--pink); --s: 14px; top: 24%; left: 44%; --d: 11s"></span>
+      <span style="--c: var(--yellow); --s: 16px; top: 8%; left: 88%; --d: 12s"></span>
+      <span style="--c: var(--energy); --s: 12px; top: 40%; left: 94%; --d: 9s"></span>
+      <span style="--c: var(--pink); --s: 18px; top: 34%; left: 3%; --d: 13s"></span>
+    </div>
+    <main>
+      <section class="info">
+        <h1 class="logo">
+          <svg viewBox="0 0 120 112" aria-hidden="true">
+            <line x1="60" y1="30" x2="60" y2="10" stroke="#1d1646" stroke-width="6" stroke-linecap="round" />
+            <circle cx="60" cy="10" r="8" fill="#45f0df" stroke="#1d1646" stroke-width="4" />
+            <rect x="6" y="50" width="14" height="30" rx="7" fill="#45f0df" stroke="#1d1646" stroke-width="4" />
+            <rect x="100" y="50" width="14" height="30" rx="7" fill="#45f0df" stroke="#1d1646" stroke-width="4" />
+            <rect x="14" y="28" width="92" height="76" rx="26" fill="#f4f2ff" stroke="#1d1646" stroke-width="5" />
+            <rect x="26" y="40" width="68" height="50" rx="14" fill="#1b1f3b" />
+            <path d="M38 64a8 8 0 0 1 16 0M66 64a8 8 0 0 1 16 0" fill="none" stroke="#45f0df" stroke-width="5" stroke-linecap="round" />
+            <path d="M52 74q8 7 16 0" fill="none" stroke="#45f0df" stroke-width="4" stroke-linecap="round" />
+          </svg>
+          <span>BUILD YOUR <em>AI</em></span>
+        </h1>
+        <p>
+          Playable ad: build an AI racer in three taps, watch it assemble in 3D, then line it up on a neon highway that
+          runs into a cyberpunk city. Every choice changes what it has to dodge.
+        </p>
+        <ul class="tech">
+          <li>TypeScript</li>
+          <li>Three.js</li>
+          <li>WebGL 2 + GLSL</li>
+          <li>Vite</li>
+          <li>Procedural 3D</li>
+          <li>Procedural audio</li>
+        </ul>
+        <div class="actions">
+          <a class="btn" href="play.html">Play full screen</a>
+          <button class="btn secondary" id="restart" type="button">Restart</button>
+          <a class="btn secondary" href="https://github.com/AndersonIgarashi/robot_rescue">Source</a>
+        </div>
+        <p class="hint">Turn the sound on. Works with mouse or touch.</p>
+        <p class="credit">Created by: <a href="https://github.com/AndersonIgarashi">Anderson Igarashi</a></p>
+      </section>
+      <div class="phone">
+        <iframe id="game" src="play.html?dev=0" title="Build Your AI playable" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </main>
+    <script>
+      document.getElementById('restart').addEventListener('click', function () {
+        var frame = document.getElementById('game');
+        frame.src = 'play.html?dev=0&t=' + Date.now();
+      });
+    </script>
+  </body>
+</html>

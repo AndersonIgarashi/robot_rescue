@@ -16,7 +16,9 @@ The engine is **TypeScript + Three.js** on a hand-written game layer. There is n
 
 ## Live Demo
 
-**▶ Play:** _add your deployment URL here_ (the included GitHub Pages workflow publishes `dist/index.html` on every push to `main`).
+**▶ Play it: https://andersonigarashi.github.io/robot_rescue/**
+
+Every push to `main` runs `.github/workflows/pages.yml`, which builds the playable and publishes it to GitHub Pages together with the showcase page in `pages/index.html` (phone frame on desktop, full screen on phones). The raw playable is served as `play.html`, and the showcase frame loads it with `?dev=0`.
 
 | URL parameter | Effect |
 | --- | --- |
@@ -232,3 +234,7 @@ The flow was verified end-to-end with automated headless Chrome and Edge runs (p
 
 - Font: [Lilita One](https://fonts.google.com/specimen/Lilita+One) by Juan Montoreano, SIL Open Font License 1.1 (subset embedded).
 - Everything else (models, track, city, VFX, icons, sound) is procedural and original to this project, apart from the tutorial hand image supplied for it.
+
+---
+
+Created by: [Anderson Igarashi](https://github.com/AndersonIgarashi)
