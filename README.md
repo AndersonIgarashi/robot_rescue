@@ -61,6 +61,32 @@ A character creator with no payoff feels pointless ("I built an AI… so what?")
 - **Ownership and curiosity.** "Will *my* racer make it?" The player has invested in this character, so seeing it perform is the reward, and the full reward lives in the app.
 - **Cliffhanger.** The teaser run shows the real core loop (lanes, hazards, pickups) and then freezes one step before impact. The only way to resolve the tension is the CTA.
 
+## How It Was Built (AI Workflow)
+
+I built this playable with AI tools over two days, to see how far one developer can take a playable with them. Claude Code wrote most of the implementation from my briefs. My job was direction and review: I played every build on my phone, decided what was wrong and chose what shipped.
+
+| Stage | Tool | What it did |
+| --- | --- | --- |
+| Brief | ChatGPT | First draft of the production brief: scope, stack, flow and architecture |
+| Implementation | Claude Code (agentic, working in the repo) | TypeScript, Three.js and GLSL, one commit per milestone, and a LAN dev server so I could test on a phone |
+| QA | Claude Code + puppeteer-core | Scripted headless Chrome and Edge playthroughs with a screenshot at every beat (see [Quality Assurance](#quality-assurance)) |
+
+### What I changed after playing it
+
+- **The ending had no purpose.** The first version ended on the reveal and a CTA. Playing it, the question was "I built an AI… so what?". I designed the replacement: a 3-lane runner start line where your choices decide what the racer has to dodge (an ice racer dodges fire jets), held as a scene that waits for the RUN! tap. I also flagged that the first step's personality traits had nothing to do with a race, so they became gadgets (Shield / Turbo / Blaster).
+- **No title screen.** The generated flow opened on a title screen with a Play button. I cut it: in a playable ad the first tap is already the game, so the gadget question is on screen at load.
+- **Idle cards.** I asked for a squash-and-stretch cascade across the option cards while the player is idle, so the screen keeps asking for a tap.
+- **Scale and camera.** The highway was too small for the robot. I had it widened and extended to the horizon, the camera lowered and tilted up, and the neon city added at the end of the road.
+- **A "z-fight" that wasn't one.** I noticed striped, flickering windows on the buildings and asked for a small depth offset. Investigating it found another cause: interpolation jittered the per-building seed by about 1e-7 per pixel, and the window hash amplified that into stripes. The fix was `flat` varyings in `cityShaders.ts`, not an offset.
+
+### How I review AI output
+
+- I play every build start to finish before accepting it, on a phone as well as on desktop.
+- TypeScript runs in strict mode and `npm run typecheck` has to pass.
+- I check portrait, tall phones, tablet, landscape and desktop, including live resizing.
+- Zero console errors, and the final HTML makes no external requests.
+- Model output at runtime is treated the same way: `RemoteAICharacterGenerator` validates and clamps everything a model returns (see [AI Integration](#ai-integration)).
+
 ## Tech Stack
 
 - **TypeScript** in strict mode, with no `any`
